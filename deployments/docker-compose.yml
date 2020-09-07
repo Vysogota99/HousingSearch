@@ -1,0 +1,22 @@
+version: "3.3"
+
+services: 
+  go:
+    build: ../build/go/
+    ports: 
+      - "9000:9000"
+    volumes: 
+      - "../:/go/src/school"
+      - "../build/pkg/:/go/pkg/"
+    links: 
+      - store
+    tty: true
+  
+  store:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: qwerty
+    ports:
+      - "5432:5432"
+    volumes: 
+      - "../build/db:/var/lib/postgresql/data/"
