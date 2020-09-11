@@ -4,12 +4,13 @@ services:
   go:
     build: ../build/go/
     ports: 
-      - "9000:9000"
+      - "3000:3000"
     volumes: 
       - "../:/go/src/school"
       - "../build/pkg/:/go/pkg/"
     links: 
       - store
+      - frontend
     tty: true
   
   store:
@@ -20,3 +21,16 @@ services:
       - "5432:5432"
     volumes: 
       - "../build/db:/var/lib/postgresql/data/"
+  frontend:
+    image: ../web
+    depends_on:
+      - backend
+    links: 
+      - backend
+    tty: true
+    ports: 
+      - "80:80"
+    volumes:
+      - "../web/school-front/:/usr/share/nginx/html"
+      - "../web/school-front/site.conf:/etc/nginx/conf.d/default.conf"
+  
