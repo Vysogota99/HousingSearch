@@ -1,7 +1,7 @@
 version: "3.3"
 
 services: 
-  go:
+  backend:
     build: ../build/go/
     ports: 
       - "3000:3000"
@@ -9,8 +9,8 @@ services:
       - "../:/go/src/school"
       - "../build/pkg/:/go/pkg/"
     links: 
+
       - store
-      - frontend
     tty: true
   
   store:
@@ -21,12 +21,9 @@ services:
       - "5432:5432"
     volumes: 
       - "../build/db:/var/lib/postgresql/data/"
+  
   frontend:
-    image: ../web
-    depends_on:
-      - backend
-    links: 
-      - backend
+    build: ../web/school-front
     tty: true
     ports: 
       - "80:80"
