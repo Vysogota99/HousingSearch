@@ -4,3 +4,4 @@ build/*
 web/*
 !web/Dockerfile
 !web/site.conf
+!web/docker
