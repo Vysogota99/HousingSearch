@@ -23,10 +23,10 @@ services:
       - "../build/db:/var/lib/postgresql/data/"
   
   frontend:
-    build: ../web/school-front
+    build: ../web/
     tty: true
     ports: 
       - "80:80"
     volumes:
-      - "../web/school-front/site.conf:/etc/nginx/conf.d/default.conf"
+      - "../web/site.conf:/etc/nginx/conf.d/default.conf"
   
