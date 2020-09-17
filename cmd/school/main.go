@@ -1,15 +1,15 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "В голове было смешнее")
+	r := gin.Default()
+	r.GET("/test", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Hello world",
+		})
 	})
-
-	http.ListenAndServe(":3000", mux)
+	r.Run(":3000") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }
