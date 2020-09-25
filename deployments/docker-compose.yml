@@ -21,6 +21,14 @@ services:
     volumes: 
       - "../build/db:/var/lib/postgresql/data/"
 
+  redis:
+    image: redis
+    volumes: 
+      - "../build/redis/etc/redis.conf:/usr/local/etc/redis/redis.conf"
+      - "../build/redis/data:/data"
+    ports: 
+      - "6379:6379"
+
   nginx:
     build: ../web/docker/nginx
     tty: true
@@ -29,6 +37,8 @@ services:
     volumes: 
       - "../web/school-front/dist:/app"
       - "../web/docker/nginx/site.conf:/etc/nginx/conf.d/default.conf"
+    depends_on: 
+      - frontend
 
   frontend:
     image: node
@@ -37,4 +47,6 @@ services:
       - "8080:8080"
     volumes:
       - "../web/school-front:/app"
+
+  
   

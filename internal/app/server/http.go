@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/Vysogota99/school/internal/server/routers/ginrouter"
+	"github.com/Vysogota99/school/internal/app/server/routers/ginrouter"
 )
 
 // HTTP ...
@@ -17,9 +17,8 @@ type Router interface {
 
 // NewHTTP - helper for initialization http
 func NewHTTP(conf *Config) *HTTP {
-	ginRouter := ginrouter.NewRouter(conf.ServerPort)
 	return &HTTP{
-		router: ginRouter,
+		router: ginrouter.NewRouter(conf.ServerPort),
 		conf:   conf,
 	}
 }
