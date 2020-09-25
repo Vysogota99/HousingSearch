@@ -4,6 +4,8 @@ package models
 type User struct {
 	ID                 int    `JSON:"id"`
 	TelephoneNumber    string `JSON:"telephone_number"`
+	TelegramProfile    string `JSON:"telegram_profile"`
+	Email              string `JSON:"email"`
 	Role               int    `JSON:"role"`
 	PassSeries         string `JSON:"passport_series"`
 	PassNumber         string `JSON:"passport_number"`
@@ -17,4 +19,11 @@ type User struct {
 	PassDateOfBirth    string `JSON:"passport_date_of_birth"`
 	PassPlaceOfBirth   string `JSON:"passport_place_of_birth"`
 	PassRegistration   string `JSON:"passport_registration"`
+}
+
+// Roles - роли пользователей в системе
+type Roles struct {
+	ID          string `JSON:"id"`
+	Name        string `JSON:"name"`
+	Description string `JSON:"description"`
 }
