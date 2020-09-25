@@ -7,10 +7,11 @@ import (
 
 // Config ...
 type Config struct {
-	ServerPort  string
-	FrontPort   string
-	BaseLocURL  string
-	BaseProdURL string
+	ServerPort      string
+	FrontPort       string
+	BaseLocURL      string
+	BaseProdURL     string
+	AuthServicePort string
 }
 
 // NewConfig - helper to init config
@@ -35,10 +36,16 @@ func NewConfig() (*Config, error) {
 		return nil, fmt.Errorf("No BASE_PROD_URL in .env")
 	}
 
+	authServicePort, exists := os.LookupEnv("AUTH_SERVICE_PORT")
+	if !exists {
+		panic("No AUTH_SERVICE_PORT in .env")
+	}
+
 	return &Config{
-		ServerPort:  serverPort,
-		FrontPort:   frontPort,
-		BaseLocURL:  baseLocURL,
-		BaseProdURL: baseProdURL,
+		ServerPort:      serverPort,
+		FrontPort:       frontPort,
+		BaseLocURL:      baseLocURL,
+		BaseProdURL:     baseProdURL,
+		AuthServicePort: authServicePort,
 	}, nil
 }

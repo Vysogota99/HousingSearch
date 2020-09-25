@@ -8,9 +8,14 @@ type Server struct {
 
 // NewServer - helper to init server
 func NewServer(conf *Config) (*Server, error) {
+	http, err := NewHTTP(conf)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Server{
 		Conf: conf,
-		HTTP: NewHTTP(conf),
+		HTTP: http,
 	}, nil
 }
 

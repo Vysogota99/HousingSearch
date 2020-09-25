@@ -2,12 +2,12 @@ version: "3.3"
 
 services: 
   backend:
-    build: ../build/go/
+    build: ../build/docker/go/
     ports: 
       - "3000:3000"
     volumes: 
       - "../:/go/src/school"
-      - "../build/pkg/:/go/pkg/"
+      - "../build/docker/pkg/:/go/pkg/"
     links: 
       - store
     tty: true
@@ -19,13 +19,13 @@ services:
     ports:
       - "5432:5432"
     volumes: 
-      - "../build/db:/var/lib/postgresql/data/"
+      - "../build/docker/db:/var/lib/postgresql/data/"
 
   redis:
     image: redis
     volumes: 
-      - "../build/redis/etc/redis.conf:/usr/local/etc/redis/redis.conf"
-      - "../build/redis/data:/data"
+      - "../build/docker/redis/etc/redis.conf:/usr/local/etc/redis/redis.conf"
+      - "../build/docker/redis/data:/data"
     ports: 
       - "6379:6379"
 

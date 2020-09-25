@@ -1,4 +1,4 @@
-package jwt
+package auth
 
 // TokenDetails house these tokens definitions, their expiration periods and uuids
 type TokenDetails struct {

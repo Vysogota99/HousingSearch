@@ -1,8 +1,12 @@
 package ginrouter
 
 import (
+	"fmt"
 	"net/http"
 
+	"context"
+
+	"github.com/Vysogota99/school/pkg/authService"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,4 +25,22 @@ func (r *GinRouter) TestAPIHandler(c *gin.Context) {
 			"IP":        c.Request.RemoteAddr,
 		},
 	)
+}
+
+// LoginHandler - ...
+func (r *GinRouter) LoginHandler(c *gin.Context) {
+	res, err := r.authClient.CreateAuth(context.Background(), &authService.CreateAuthRequest{ID: "Ivan"})
+	if err != nil {
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{
+				"message": fmt.Errorf("Ошибка при запросе к сервису авторизации").Error(),
+				"error":   err.Error(),
+			},
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"result": res})
+	return
 }

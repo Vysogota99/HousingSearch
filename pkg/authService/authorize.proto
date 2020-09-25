@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package authService;
+
+// protoc -I . --go_out=plugins=grpc:. authorize.proto
+
+service Adder{
+    rpc CreateAuth(createAuthRequest) returns (createAutResponse) {}
+    // rpc FetchAuth(ferchAuthRequest) returns (fetchAuthResponse) {}
+    // rpc DeleteAuth(deleteAuthRequest) returns (deleteauthResponse) {}
+    // rpc RefreshAuth(refreshAuthRequest) returns (refreshAuthResponse) {}
+}
+
+message createAuthRequest {
+    string ID = 1;
+}
+
+message createAutResponse {
+    tokenDetails tDetails = 1;
+    string error = 2;
+}
+
+// message ferchAuthRequest {
+
+// }
+
+// message fetchAuthResponse {
+
+// }
+
+// message deleteAuthRequest {
+
+// }
+
+// message deleteauthResponse {
+
+// }
+
+// message refreshAuthRequest{
+
+// }
+
+// message refreshAuthResponse {
+
+// }
+
+message tokenDetails {
+    string AccessToken = 1; 
+    string RefreshToken = 2;
+    string AccessUUID = 3;  
+    string RefreshUUID = 4; 
+    int64 AccTExpires = 5; 	
+    int64 RefTExpires = 6; 
+}
+
+// message accessDetails {
+
+// }
