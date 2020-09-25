@@ -3,6 +3,6 @@ module github.com/Vysogota99/school
 go 1.14
 
 require (
-	github.com/gin-gonic/gin v1.6.3 // indirect
+	github.com/gin-gonic/gin v1.6.3
 	github.com/joho/godotenv v1.3.0
 )
