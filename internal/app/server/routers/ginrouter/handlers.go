@@ -13,9 +13,6 @@ import (
 
 // TestAPIHandler - handle request from outside to check accessibility of the server
 func (r *GinRouter) TestAPIHandler(c *gin.Context) {
-	c.Writer.Header().Add("Content-Type", "application/json")
-	c.Writer.Header().Add("Access-Control-Allow-Origin", "*")
-
 	c.JSON(
 		http.StatusOK,
 		gin.H{
@@ -59,6 +56,7 @@ func (r *GinRouter) SignUPHandler(c *gin.Context) {
 		gin.H{
 			"access_token":  res.AccessToken,
 			"refresh_token": res.RefreshToken,
+			"user":          user,
 		},
 	)
 }
@@ -94,4 +92,9 @@ func (r *GinRouter) LogoutHandler(c *gin.Context) {
 			"result": res.Message,
 		},
 	)
+}
+
+// LogInHandler - автризация пользователя
+func (r *GinRouter) LogInHandler(c *gin.Context) {
+
 }

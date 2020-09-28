@@ -25,11 +25,12 @@ func NewRouter(port string, authClient authService.AuthorizerClient) *GinRouter 
 func (r *GinRouter) Run() {
 	api := r.router.Group("/api")
 	{
-		api.GET("/", r.TestAPIHandler)
-		api.POST("/", r.TokenAuthMiddleware(), r.TestAPIHandler)
+		api.GET("/", r.HeadersMiddleware(), r.TestAPIHandler)
+		api.POST("/", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.TestAPIHandler)
 
-		api.POST("/signup", r.SignUPHandler)
-		api.POST("/logout", r.LogoutHandler)
+		api.POST("/signup", r.HeadersMiddleware(), r.SignUPHandler)
+		api.POST("/logout", r.HeadersMiddleware(), r.LogoutHandler)
+		api.POST("/login", r.HeadersMiddleware(), r.LogInHandler)
 	}
 	r.router.Run(r.port)
 }

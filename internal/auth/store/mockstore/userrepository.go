@@ -11,6 +11,7 @@ type UserRepository struct {
 
 // CreateUser - создает нового пользователя в базе данных
 func (u *UserRepository) CreateUser(user *authService.User) error {
+	
 	return nil
 }
 

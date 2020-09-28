@@ -32,3 +32,12 @@ func (r *GinRouter) TokenAuthMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// HeadersMiddleware - устанавливает заголовки
+func (r *GinRouter) HeadersMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Add("Content-Type", "application/json")
+		c.Writer.Header().Add("Access-Control-Allow-Origin", "*")
+		c.Next()
+	}
+}

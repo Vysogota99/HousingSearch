@@ -60,5 +60,5 @@ message User {
 	string PassDateOfBirth = 16; 
 	string PassPlaceOfBirth = 17;
 	string PassRegistration = 18;
-	string password = 19;
+	string Password = 19;
 }
