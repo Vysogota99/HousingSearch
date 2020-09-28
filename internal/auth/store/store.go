@@ -1,6 +1,6 @@
 package store
 
-import "github.com/Vysogota99/school/internal/auth/models"
+import "github.com/Vysogota99/school/pkg/authService"
 
 // Store - ...
 type Store interface {
@@ -9,5 +9,6 @@ type Store interface {
 
 // UserRepository ...
 type UserRepository interface {
-	CreateUser(user *models.User) error
+	CreateUser(user *authService.User) error
+	GetUser(telephoneNumber string) *authService.User
 }

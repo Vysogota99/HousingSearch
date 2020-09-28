@@ -1,4 +1,4 @@
-package auth
+package jwt
 
 // TokenDetails house these tokens definitions, their expiration periods and uuids
 type TokenDetails struct {
@@ -13,5 +13,5 @@ type TokenDetails struct {
 // AccessDetails ...
 type AccessDetails struct {
 	AccessUUID string
-	UserID     string
+	Field      string
 }

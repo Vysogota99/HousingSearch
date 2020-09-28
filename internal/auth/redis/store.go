@@ -10,8 +10,8 @@ type Redis struct {
 	dsn    string
 }
 
-// New redis
-func New(dsn string) (*Redis, error) {
+// NewClient - ...
+func NewClient(dsn string) (*Redis, error) {
 	redisClient := &Redis{}
 	redisClient.dsn = dsn
 	redisClient.Client = redis.NewClient(&redis.Options{

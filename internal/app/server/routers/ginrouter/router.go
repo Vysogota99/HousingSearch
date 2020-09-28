@@ -8,12 +8,12 @@ import (
 // GinRouter - router base on gin
 type GinRouter struct {
 	router     *gin.Engine
-	authClient authService.AdderClient
+	authClient authService.AuthorizerClient
 	port       string
 }
 
 // NewRouter - helper fo initialozation ginRouter
-func NewRouter(port string, authClient authService.AdderClient) *GinRouter {
+func NewRouter(port string, authClient authService.AuthorizerClient) *GinRouter {
 	return &GinRouter{
 		port:       port,
 		router:     gin.Default(),
@@ -26,9 +26,10 @@ func (r *GinRouter) Run() {
 	api := r.router.Group("/api")
 	{
 		api.GET("/", r.TestAPIHandler)
-		api.POST("/", r.TestAPIHandler)
+		api.POST("/", r.TokenAuthMiddleware(), r.TestAPIHandler)
 
-		api.POST("/login", r.LoginHandler)
+		api.POST("/signup", r.SignUPHandler)
+		api.POST("/logout", r.LogoutHandler)
 	}
 	r.router.Run(r.port)
 }

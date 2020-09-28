@@ -1,8 +1,7 @@
-package auth
+package jwt
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -25,7 +24,7 @@ func CreateToken(steamID string) (*TokenDetails, error) {
 	atClaims := jwt.MapClaims{}
 	atClaims["authorized"] = true
 	atClaims["access_uuid"] = tokenDet.AccessUUID
-	atClaims["steam_id"] = steamID
+	atClaims["telephone_number"] = steamID
 	atClaims["exp"] = tokenDet.AccTExpires
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	tokenDet.AccessToken, err = accessToken.SignedString([]byte(os.Getenv("ACCESS_SECRET")))
@@ -36,7 +35,7 @@ func CreateToken(steamID string) (*TokenDetails, error) {
 	// Creating refresh token
 	rtClaims := jwt.MapClaims{}
 	rtClaims["refresh_uuid"] = tokenDet.RefreshUUID
-	rtClaims["steam_id"] = steamID
+	rtClaims["telephone_number"] = steamID
 	rtClaims["exp"] = tokenDet.RefTExpires
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
 	tokenDet.RefreshToken, err = refreshToken.SignedString([]byte(os.Getenv("REFRESH_SECRET")))
@@ -47,8 +46,8 @@ func CreateToken(steamID string) (*TokenDetails, error) {
 }
 
 // VerifyToken - verify the token
-func VerifyToken(r *http.Request) (*jwt.Token, error) {
-	tokenString := ExtractToken(r)
+func VerifyToken(headerString string) (*jwt.Token, error) {
+	tokenString := ExtractToken(headerString)
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -63,8 +62,7 @@ func VerifyToken(r *http.Request) (*jwt.Token, error) {
 }
 
 // ExtractToken - extract the token from the request header
-func ExtractToken(r *http.Request) string {
-	bearerToken := r.Header.Get("Authorization")
+func ExtractToken(bearerToken string) string {
 	strArr := strings.Split(bearerToken, " ")
 	if len(strArr) == 2 {
 		return strArr[1]
@@ -73,8 +71,8 @@ func ExtractToken(r *http.Request) string {
 }
 
 // TokenValid - check the validity of this token
-func TokenValid(r *http.Request) error {
-	token, err := VerifyToken(r)
+func TokenValid(tokenString string) error {
+	token, err := VerifyToken(tokenString)
 	if err != nil {
 		return err
 	}
@@ -85,8 +83,8 @@ func TokenValid(r *http.Request) error {
 }
 
 // ExtractTokenMetadata - extract the token metadata that will lookup in our redis store
-func ExtractTokenMetadata(r *http.Request) (*AccessDetails, error) {
-	token, err := VerifyToken(r)
+func ExtractTokenMetadata(tokenString string) (*AccessDetails, error) {
+	token, err := VerifyToken(tokenString)
 	if err != nil {
 		return nil, err
 	}
@@ -96,13 +94,13 @@ func ExtractTokenMetadata(r *http.Request) (*AccessDetails, error) {
 		if !ok {
 			return nil, err
 		}
-		userID, ok := claims["steam_id"].(string)
+		field, ok := claims["telephone_number"].(string)
 		if !ok {
 			return nil, err
 		}
 		return &AccessDetails{
 			AccessUUID: accessUUID,
-			UserID:     userID,
+			Field:      field,
 		}, nil
 	}
 	return nil, err

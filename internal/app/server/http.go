@@ -32,12 +32,12 @@ func NewHTTP(conf *Config) (*HTTP, error) {
 	}, nil
 }
 
-func getAuthSrerviceClient(port string) (authService.AdderClient, error) {
+func getAuthSrerviceClient(port string) (authService.AuthorizerClient, error) {
 	connection, err := grpc.Dial(port, grpc.WithInsecure())
 
 	if err != nil {
 		return nil, fmt.Errorf("Can't dial to authService. %w", err)
 	}
 
-	return authService.NewAdderClient(connection), nil
+	return authService.NewAuthorizerClient(connection), nil
 }

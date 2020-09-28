@@ -4,9 +4,8 @@ import (
 	"log"
 	"net"
 
-	"github.com/Vysogota99/school/internal/auth/redis"
 	"github.com/Vysogota99/school/internal/auth/store"
-	"github.com/Vysogota99/school/internal/auth/store/postgresstore"
+	"github.com/Vysogota99/school/internal/auth/store/mockstore"
 	"github.com/Vysogota99/school/pkg/authService"
 	"google.golang.org/grpc"
 )
@@ -15,19 +14,12 @@ import (
 type GRPCServer struct {
 	Conf  *Config
 	Store store.Store
-	Redis *redis.Redis
 }
 
 // NewGRPCServer ...
 func NewGRPCServer(conf *Config) (*GRPCServer, error) {
-	redisClient, err := redis.New(conf.RedisDSN)
-	if err != nil {
-		return nil, err
-	}
-
 	server := &GRPCServer{}
-	server.Store = postgresstore.New()
-	server.Redis = redisClient
+	server.Store = mockstore.New()
 	server.Conf = conf
 	return server, nil
 }
@@ -35,7 +27,7 @@ func NewGRPCServer(conf *Config) (*GRPCServer, error) {
 // Start - start tcp server
 func (s *GRPCServer) Start() error {
 	srv := grpc.NewServer()
-	authService.RegisterAdderServer(srv, s)
+	authService.RegisterAuthorizerServer(srv, s)
 	listenerTCP, err := net.Listen("tcp", s.Conf.AuthServicePort)
 	if err != nil {
 		return err

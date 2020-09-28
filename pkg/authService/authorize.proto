@@ -4,55 +4,61 @@ package authService;
 
 // protoc -I . --go_out=plugins=grpc:. authorize.proto
 
-service Adder{
-    rpc CreateAuth(createAuthRequest) returns (createAutResponse) {}
-    // rpc FetchAuth(ferchAuthRequest) returns (fetchAuthResponse) {}
-    // rpc DeleteAuth(deleteAuthRequest) returns (deleteauthResponse) {}
-    // rpc RefreshAuth(refreshAuthRequest) returns (refreshAuthResponse) {}
+service Authorizer{
+	rpc SignupUser(SignUPUserRequest) returns (SignUPUserResponse) {}
+	rpc LogOutUser(LogOutRequest) returns (LogOutResponse) {}
+	rpc CheckAuthUser(CheckAuthRequest) returns (CheckAuthResponse) {}
+	rpc LoginUser(LoginUserRequest) returns (SignUPUserResponse) {}
 }
 
-message createAuthRequest {
-    string ID = 1;
+message SignUPUserRequest {
+    User user = 1;
 }
 
-message createAutResponse {
-    tokenDetails tDetails = 1;
-    string error = 2;
+message SignUPUserResponse {
+	string AccessToken = 1;
+	string RefreshToken = 2;
 }
 
-// message ferchAuthRequest {
-
-// }
-
-// message fetchAuthResponse {
-
-// }
-
-// message deleteAuthRequest {
-
-// }
-
-// message deleteauthResponse {
-
-// }
-
-// message refreshAuthRequest{
-
-// }
-
-// message refreshAuthResponse {
-
-// }
-
-message tokenDetails {
-    string AccessToken = 1; 
-    string RefreshToken = 2;
-    string AccessUUID = 3;  
-    string RefreshUUID = 4; 
-    int64 AccTExpires = 5; 	
-    int64 RefTExpires = 6; 
+message LogOutRequest {
+	string jwt = 1;
 }
 
-// message accessDetails {
+message LogOutResponse {
+	string message = 1;
+}
 
-// }
+message CheckAuthRequest {
+	string jwt = 1;
+}
+
+message CheckAuthResponse {
+	string telephoneNumber = 1;
+}
+
+message LoginUserRequest {
+	User user = 1;
+}
+
+
+message User {
+    int64 ID = 1;                
+	string TelephoneNumber = 2;    
+	string TelegramProfile = 3;
+	string VkProfile = 4;
+	string Email = 5;
+	int32 Role = 6;               
+	string PassSeries = 7;        
+	string PassNumber = 8;         
+	string PassDateOfIssue = 9;    
+	string PassDepartmentCode = 10;
+	string PassIssueBy = 11;
+	string PassName = 12;           
+	string PassLastName = 13;     
+	string PassPatronymic = 14;
+	string PassSex = 15;           
+	string PassDateOfBirth = 16; 
+	string PassPlaceOfBirth = 17;
+	string PassRegistration = 18;
+	string password = 19;
+}
