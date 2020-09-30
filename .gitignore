@@ -1,6 +1,8 @@
 build/*
 !build/go/
 !build/.env_example
+!build/auth
+!build/main
 web/*
 !web/Dockerfile
 !web/site.conf
