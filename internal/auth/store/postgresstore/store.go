@@ -7,11 +7,14 @@ import (
 // StorePSQL - реализует взаимодействие с базой данных
 type StorePSQL struct {
 	userRepository *UserRepository
+	ConnString     string
 }
 
 // New - инициализирует Store
-func New() *StorePSQL {
-	return &StorePSQL{}
+func New(connString string) *StorePSQL {
+	return &StorePSQL{
+		ConnString: connString,
+	}
 }
 
 // User ...

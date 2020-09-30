@@ -10,5 +10,5 @@ type Store interface {
 // UserRepository ...
 type UserRepository interface {
 	CreateUser(user *authService.User) error
-	GetUser(telephoneNumber string) *authService.User
+	GetUser(telephoneNumber string) (*authService.User, error)
 }

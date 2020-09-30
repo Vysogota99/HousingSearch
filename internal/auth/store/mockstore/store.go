@@ -7,11 +7,14 @@ import (
 // StoreMock - реализует взаимодействие с базой данных
 type StoreMock struct {
 	userRepository store.UserRepository
+	ConnString     string
 }
 
 // New - инициализирует Store
-func New() *StoreMock {
-	return &StoreMock{}
+func New(connString string) *StoreMock {
+	return &StoreMock{
+		ConnString: connString,
+	}
 }
 
 // User ...

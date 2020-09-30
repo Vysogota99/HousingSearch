@@ -11,11 +11,11 @@ type UserRepository struct {
 
 // CreateUser - создает нового пользователя в базе данных
 func (u *UserRepository) CreateUser(user *authService.User) error {
-	
+
 	return nil
 }
 
 // GetUser - получение пользователя (по номеру телефона) из базы данных
-func (u *UserRepository) GetUser(telephoneNumber string) *authService.User {
-	return nil
+func (u *UserRepository) GetUser(telephoneNumber string) (*authService.User, error) {
+	return nil, nil
 }

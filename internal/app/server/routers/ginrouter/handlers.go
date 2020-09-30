@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"context"
 
@@ -27,7 +28,17 @@ func (r *GinRouter) TestAPIHandler(c *gin.Context) {
 
 // SignUPHandler - регистрация пользователя
 func (r *GinRouter) SignUPHandler(c *gin.Context) {
-	user := &authService.User{}
+	type User struct {
+		Name            string `JSON:"name" binding:"required"`
+		LastName        string `JSON:"lastname" binding:"required"`
+		Sex             string `JSON:"sex" binding:"required"`
+		DateOfBirth     string `JSON:"dateOfBirth" binding:"required"`
+		Password        string `JSON:"password" binding:"required"`
+		TelephoneNumber string `JSON:"telephoneNumber" binding:"required"`
+		Role            string `JSON:"role" binding:"required"`
+	}
+
+	user := &User{}
 	if err := c.ShouldBindJSON(user); err != nil {
 		c.JSON(
 			http.StatusUnprocessableEntity,
@@ -39,7 +50,27 @@ func (r *GinRouter) SignUPHandler(c *gin.Context) {
 		return
 	}
 
-	res, err := r.authClient.SignupUser(context.Background(), &authService.SignUPUserRequest{User: user})
+	userRequest := &authService.User{}
+	userRequest.PassName = user.Name
+	userRequest.PassLastName = user.LastName
+	userRequest.PassSex = user.Sex
+	userRequest.PassDateOfBirth = user.DateOfBirth
+	userRequest.Password = user.Password
+	userRequest.TelephoneNumber = user.TelephoneNumber
+	role, err := strconv.ParseInt(user.Role, 16, 32)
+	if err != nil {
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{
+				"message": fmt.Errorf("Внутренняя ошибка").Error(),
+				"error":   err.Error(),
+			},
+		)
+		return
+	}
+	userRequest.Role = int32(role)
+
+	res, err := r.authClient.SignupUser(context.Background(), &authService.SignUPUserRequest{User: userRequest})
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,
@@ -56,7 +87,7 @@ func (r *GinRouter) SignUPHandler(c *gin.Context) {
 		gin.H{
 			"access_token":  res.AccessToken,
 			"refresh_token": res.RefreshToken,
-			"user":          user,
+			"user":          res.User,
 		},
 	)
 }
@@ -96,5 +127,45 @@ func (r *GinRouter) LogoutHandler(c *gin.Context) {
 
 // LogInHandler - автризация пользователя
 func (r *GinRouter) LogInHandler(c *gin.Context) {
+	type User struct {
+		TelephoneNumber string `JSON:"telephoneNumber" binding:"required"`
+		Password        string `JSON:"password" binding:"required"`
+	}
 
+	user := &User{}
+	if err := c.ShouldBindJSON(user); err != nil {
+		c.JSON(
+			http.StatusUnprocessableEntity,
+			gin.H{
+				"message": errors.New("Неправильное тело запроса").Error(),
+				"error":   err.Error(),
+			},
+		)
+		return
+	}
+
+	userRequest := &authService.User{}
+	userRequest.Password = user.Password
+	userRequest.TelephoneNumber = user.TelephoneNumber
+
+	res, err := r.authClient.LoginUser(context.Background(), &authService.LoginUserRequest{User: userRequest})
+	if err != nil {
+		c.JSON(
+			http.StatusUnauthorized,
+			gin.H{
+				"message": fmt.Errorf("Ошибка при запросе к сервису авторизации").Error(),
+				"error":   err.Error(),
+			},
+		)
+		return
+	}
+
+	c.JSON(
+		http.StatusOK,
+		gin.H{
+			"access_token":  res.AccessToken,
+			"refresh_token": res.RefreshToken,
+			"user":          res.User,
+		},
+	)
 }

@@ -18,6 +18,7 @@ message SignUPUserRequest {
 message SignUPUserResponse {
 	string AccessToken = 1;
 	string RefreshToken = 2;
+	User user = 3;
 }
 
 message LogOutRequest {
