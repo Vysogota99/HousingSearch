@@ -6,7 +6,7 @@ import "golang.org/x/crypto/bcrypt"
 func HashPassword(value string) chan string {
 	resultChan := make(chan string)
 	go func(ch chan string) {
-		result, err := bcrypt.GenerateFromPassword([]byte(value), 16)
+		result, err := bcrypt.GenerateFromPassword([]byte(value), 8)
 		if err != nil {
 			ch <- ""
 		} else {

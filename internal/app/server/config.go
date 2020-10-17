@@ -12,6 +12,7 @@ type Config struct {
 	BaseLocURL      string
 	BaseProdURL     string
 	AuthServicePort string
+	DBConnString    string
 }
 
 // NewConfig - helper to init config
@@ -41,8 +42,14 @@ func NewConfig() (*Config, error) {
 		panic("No AUTH_SERVICE_PORT in .env")
 	}
 
+	dbConnString, exists := os.LookupEnv("DB_CONN_STRING")
+	if !exists {
+		return nil, fmt.Errorf("No DB_CONN_STRING in .env")
+	}
+
 	return &Config{
 		ServerPort:      serverPort,
+		DBConnString:    dbConnString,
 		FrontPort:       frontPort,
 		BaseLocURL:      baseLocURL,
 		BaseProdURL:     baseProdURL,

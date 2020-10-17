@@ -8,12 +8,12 @@ services:
     volumes: 
       - "../:/go/src/school"
       - "../build/pkg/:/go/pkg/"
-    links: 
-      - store
+    # links: 
+    #   - store
     tty: true
   
   store:
-    image: postgres
+    image: postgres:12
     environment:
       POSTGRES_PASSWORD: qwerty
     ports:
