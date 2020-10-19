@@ -1,8 +1,8 @@
 package server
 
 import (
-	"github.com/Vysogota99/school/internal/app/store"
-	"github.com/Vysogota99/school/pkg/authService"
+	"github.com/Vysogota99/HousingSearch/internal/app/store"
+	"github.com/Vysogota99/HousingSearch/pkg/authService"
 	"github.com/gin-gonic/gin"
 )
 

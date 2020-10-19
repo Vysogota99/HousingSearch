@@ -1,7 +1,7 @@
 package mockstore
 
 import (
-	"github.com/Vysogota99/school/internal/auth/store"
+	"github.com/Vysogota99/HousingSearch/internal/auth/store"
 )
 
 // StoreMock - реализует взаимодействие с базой данных

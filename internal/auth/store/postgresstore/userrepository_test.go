@@ -3,8 +3,8 @@ package postgresstore_test
 import (
 	"testing"
 
-	"github.com/Vysogota99/school/internal/auth/store/postgresstore"
-	"github.com/Vysogota99/school/pkg/authService"
+	"github.com/Vysogota99/HousingSearch/internal/auth/store/postgresstore"
+	"github.com/Vysogota99/HousingSearch/pkg/authService"
 	"github.com/stretchr/testify/assert"
 )
 

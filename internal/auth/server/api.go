@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Vysogota99/school/internal/auth/jwt"
-	"github.com/Vysogota99/school/internal/auth/store/postgresstore"
-	"github.com/Vysogota99/school/pkg/authService"
+	"github.com/Vysogota99/HousingSearch/internal/auth/jwt"
+	"github.com/Vysogota99/HousingSearch/internal/auth/store/postgresstore"
+	"github.com/Vysogota99/HousingSearch/pkg/authService"
 )
 
 // SignupUser - создает пользователя в базе данных, генерирует для него jwt токен,

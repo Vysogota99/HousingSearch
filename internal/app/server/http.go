@@ -3,7 +3,7 @@ package server
 import (
 	"fmt"
 
-	"github.com/Vysogota99/school/pkg/authService"
+	"github.com/Vysogota99/HousingSearch/pkg/authService"
 	"google.golang.org/grpc"
 )
 

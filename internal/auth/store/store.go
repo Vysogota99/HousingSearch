@@ -1,6 +1,6 @@
 package store
 
-import "github.com/Vysogota99/school/pkg/authService"
+import "github.com/Vysogota99/HousingSearch/pkg/authService"
 
 // Store - ...
 type Store interface {

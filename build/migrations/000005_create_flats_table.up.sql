@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS flats (
+    id serial PRIMARY KEY, 
+    ownerID INT REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    address TEXT NOT NULL,
+    coordinates point NOT NULL,
+    description TEXT NOT NULL,
+    timeToMetroOnFoot INT,
+    timeToMetroByTransport INT,
+    floor INT NOT NULL,
+    floorTotal INT NOT NULL,
+    area INT NOT NULL,
+    repair INT REFERENCES repairs(id) NOT NULL,
+    elevator boolean NOT NULL,
+    bathroom INT NOT NULL,
+    refrigerator boolean NOT NULL,
+    dishwasher boolean NOT NULL,
+    gasStove boolean NOT NULL,
+    electricStove boolean NOT NULL,
+    vacuumcleaner boolean NOT NULL,
+    internet boolean NOT NULL,
+    animals boolean NOT NULL,
+    smoking boolean NOT NULL
+);

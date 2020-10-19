@@ -8,7 +8,7 @@ import (
 
 	"context"
 
-	"github.com/Vysogota99/school/pkg/authService"
+	"github.com/Vysogota99/HousingSearch/pkg/authService"
 	"github.com/gin-gonic/gin"
 )
 

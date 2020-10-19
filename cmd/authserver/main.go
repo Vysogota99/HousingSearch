@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/Vysogota99/school/internal/auth/server"
+	"github.com/Vysogota99/HousingSearch/internal/auth/server"
 	"github.com/joho/godotenv"
 )
 

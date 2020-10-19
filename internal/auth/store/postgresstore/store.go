@@ -1,7 +1,7 @@
 package postgresstore
 
 import (
-	"github.com/Vysogota99/school/internal/auth/store"
+	"github.com/Vysogota99/HousingSearch/internal/auth/store"
 )
 
 // StorePSQL - реализует взаимодействие с базой данных

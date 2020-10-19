@@ -1,7 +1,7 @@
 package mockstore
 
 import (
-	"github.com/Vysogota99/school/pkg/authService"
+	"github.com/Vysogota99/HousingSearch/pkg/authService"
 )
 
 // UserRepository - реализует функционал модели User

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Vysogota99/school/internal/auth/jwt"
-	"github.com/Vysogota99/school/internal/auth/redis"
-	"github.com/Vysogota99/school/pkg/authService"
+	"github.com/Vysogota99/HousingSearch/internal/auth/jwt"
+	"github.com/Vysogota99/HousingSearch/internal/auth/redis"
+	"github.com/Vysogota99/HousingSearch/pkg/authService"
 )
 
 // CreateUser - создает пользователя в бд или возвращает ошибку, если такой пользователь
