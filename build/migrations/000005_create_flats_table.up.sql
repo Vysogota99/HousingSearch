@@ -1,11 +1,13 @@
 CREATE TABLE IF NOT EXISTS flats (
     id serial PRIMARY KEY, 
     ownerID INT REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-    address TEXT NOT NULL,
-    coordinates point NOT NULL,
+    address TEXT NOT NULL UNIQUE,
+    long NUMERIC NOT NULL,
+    lat NUMERIC NOT NULL,
     description TEXT NOT NULL,
     timeToMetroOnFoot INT,
     timeToMetroByTransport INT,
+    metroStation VARCHAR(64),
     floor INT NOT NULL,
     floorTotal INT NOT NULL,
     area INT NOT NULL,
@@ -19,5 +21,7 @@ CREATE TABLE IF NOT EXISTS flats (
     vacuumcleaner boolean NOT NULL,
     internet boolean NOT NULL,
     animals boolean NOT NULL,
-    smoking boolean NOT NULL
+    smoking boolean NOT NULL,
+    isVisible boolean DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT current_timestamp
 );

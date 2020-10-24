@@ -9,7 +9,7 @@ import (
 )
 
 func TestCreateUser(t *testing.T) {
-	connstring := "user=auth_user password=admin dbname=auth_user sslmode=disable"
+	connstring := "user=housing_admin password=admin dbname=housing sslmode=disable"
 	store := postgresstore.New(connstring)
 
 	user := &authService.User{}
