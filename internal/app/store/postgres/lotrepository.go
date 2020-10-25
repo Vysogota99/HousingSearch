@@ -15,27 +15,43 @@ type LotRepository struct {
 }
 
 // GetFlats - выводит список всех квартир(объявлений)
-func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, params map[string][2]string, orderBy [2]string) ([]models.Lot, error) {
+func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, params map[string][2]string, orderBy [2]string) (models.Paginations, error) {
 	db, err := sql.Open("postgres", l.store.ConnString)
+	result := models.Paginations{}
+	result.CurrentPage = offset
+
 	defer db.Close()
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	tx, err := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	defer tx.Rollback()
 
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
+	queryNumPages := `
+					SELECT CAST (count(f.id)/$1 + 1 AS integer) as num_pages 
+					FROM (
+						SELECT flatid, sum(maxresidents) as maxresidents, sum(currnumberofresidents) as currnumberofresidents
+						FROM rooms
+						GROUP BY flatid
+					) as r
+					INNER JOIN flats f ON f.id = r.flatid
+					WHERE f.isvisible = true
+	   `
+	if err := tx.QueryRowContext(ctx, queryNumPages, limit).Scan(&result.NumPages); err != nil {
+		return result, err
+	}
 	var queryFlats string
 	var queryRooms string
 
 	if params != nil {
 		queryFlats = `
 					SELECT f.id, f.address, f.floor, f.floortotal, f.metrostation, f.timetometrobytransport, f.area,
-							r.maxresidents, r.currnumberofresidents
+							r.maxresidents, r.currnumberofresidents, f.long, f.lat
 					FROM (
 						SELECT flatid, sum(maxresidents) as maxresidents, sum(currnumberofresidents) as currnumberofresidents
 						FROM rooms
@@ -53,7 +69,7 @@ func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, params 
 	} else {
 		queryFlats = `
 			SELECT f.id, f.address, f.floor, f.floortotal, f.metrostation, f.timetometrobytransport, f.area,
-					r.maxresidents, r.currnumberofresidents
+					r.maxresidents, r.currnumberofresidents, f.long, f.lat
 			FROM (
 				SELECT flatid, sum(maxresidents) as maxresidents, sum(currnumberofresidents) as currnumberofresidents
 				FROM rooms
@@ -67,7 +83,7 @@ func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, params 
 	rowsFlats, err := tx.QueryContext(ctx, queryFlats, limit, offset)
 	defer rowsFlats.Close()
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	i := 0
@@ -76,15 +92,17 @@ func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, params 
 
 	for rowsFlats.Next() {
 		lot := models.Lot{}
-		if err := rowsFlats.Scan(&lot.ID, &lot.Address, &lot.Floor, &lot.FloorsTotal, &lot.MetroStation, &lot.TimeToMetroByTransport, &lot.Area, &lot.TotalNumberOfResidents, &lot.CurrNumberOfResidents); err != nil {
-			return nil, err
+		coord := models.Point{}
+		lot.Coordinates = coord
+		if err := rowsFlats.Scan(&lot.ID, &lot.Address, &lot.Floor, &lot.FloorsTotal, &lot.MetroStation, &lot.TimeToMetroByTransport, &lot.Area, &lot.TotalNumberOfResidents, &lot.CurrNumberOfResidents, &lot.Coordinates.X, &lot.Coordinates.Y); err != nil {
+			return result, err
 		}
 		lots = append(lots, lot)
 		flatsID = append(flatsID, lot.ID)
 		i++
 	}
 	if cap(flatsID) == 0 {
-		return nil, sql.ErrNoRows
+		return result, sql.ErrNoRows
 	}
 
 	queryRooms = `
@@ -106,14 +124,14 @@ func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, params 
 	rowsRooms, err := tx.QueryContext(ctx, queryRooms, flatsID...)
 	defer rowsRooms.Close()
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	dictWithRooms := make(map[string][]models.Room)
 	for rowsRooms.Next() {
 		room := models.Room{}
 		if err := rowsRooms.Scan(&room.FlatID, &room.ID, &room.MaxResidents, &room.CurrNumberOfResidents, &room.AvgPrice, &room.AvgDeposit); err != nil {
-			return nil, err
+			return result, err
 		}
 
 		dictWithRooms[strconv.Itoa(room.FlatID)] = append(dictWithRooms[strconv.Itoa(room.FlatID)], room)
@@ -124,7 +142,8 @@ func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, params 
 	}
 
 	tx.Commit()
-	return lots, nil
+	result.Data = lots
+	return result, nil
 }
 
 // GetFlatsFiltered - выводит список всех квартир(объявлений) с применением фильтров и сортировок
@@ -155,7 +174,7 @@ func (l *LotRepository) GetFlat(ctx context.Context, id int) (*models.Lot, error
 	err = tx.QueryRowContext(ctx, queryFlat, id).Scan(&lot.ID, &lot.OwnerID, &lot.Address, &lot.Coordinates.X, &lot.Coordinates.Y, &lot.Description,
 		&lot.TimeToMetroONFoot, &lot.TimeToMetroByTransport, &lot.MetroStation, &lot.Floor, &lot.FloorsTotal,
 		&lot.Area, &lot.Repairs, &lot.Elevators, &lot.Bathroom, &lot.Refrigerator, &lot.Dishwasher, &lot.GasStove,
-		&lot.ElectricStove, &lot.VacuumCleaner, &lot.Internet, &lot.Animals, &lot.Smoking, &lot.IsVisible,
+		&lot.ElectricStove, &lot.VacuumCleaner, &lot.Internet, &lot.Animals, &lot.Smoking, &lot.IsVisible, &lot.CreatedAt,
 	)
 	if err != nil {
 		return nil, err

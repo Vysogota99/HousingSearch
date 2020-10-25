@@ -39,7 +39,7 @@ func TestCreateLot(t *testing.T) {
 func TestGetLots(t *testing.T) {
 	var store store.Store = New(connString)
 	orderBy := [2]string{"created_at", "desc"}
-	lots, err := store.Lot().GetFlats(context.Background(), 2, 1, nil, orderBy)
+	lots, err := store.Lot().GetFlats(context.Background(), 3, 1, nil, orderBy)
 	assert.NoError(t, err)
 	assert.NotNil(t, lots)
 }

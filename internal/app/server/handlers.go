@@ -1,6 +1,7 @@
 package server
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -8,8 +9,16 @@ import (
 
 	"context"
 
+	"github.com/Vysogota99/HousingSearch/internal/app/models"
 	"github.com/Vysogota99/HousingSearch/pkg/authService"
 	"github.com/gin-gonic/gin"
+)
+
+const (
+	INVALID_REQUEST_BODY  = "неправильное тело запроса"
+	INTERNAL_SERVER_ERROR = "внутренняя ошибка сервера"
+	ALREADY_EXISTS        = "Невозможно создать запись, она уже существует"
+	LOT_NOT_FOUND         = "Квартира не найдена"
 )
 
 // TestAPIHandler - handle request from outside to check accessibility of the server
@@ -166,6 +175,80 @@ func (r *Router) LogInHandler(c *gin.Context) {
 			"access_token":  res.AccessToken,
 			"refresh_token": res.RefreshToken,
 			"user":          res.User,
+		},
+	)
+}
+
+// PostLotHandler - добавляет новый лот(квартиру) в систему
+func (r *Router) PostLotHandler(c *gin.Context) {
+	lot := &models.Lot{}
+	if err := c.ShouldBindJSON(lot); err != nil {
+		respond(c, http.StatusUnprocessableEntity, INVALID_REQUEST_BODY, err.Error())
+		return
+	}
+
+	uID := 1
+	lot.OwnerID = uID
+	if err := r.store.Lot().Create(context.Background(), lot); err != nil {
+		respond(c, http.StatusOK, ALREADY_EXISTS, err.Error())
+		return
+	}
+	respond(c, http.StatusCreated, lot, "")
+}
+
+// GetLotsHandler - получить список квартир
+func (r *Router) GetLotsHandler(c *gin.Context) {
+	offset := c.DefaultQuery("offset", "1")
+	limit := c.DefaultQuery("limit", "10")
+
+	offsetInt, err := strconv.Atoi(offset)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+
+	limitInt, err := strconv.Atoi(limit)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+
+	orderBy := [2]string{"created_at", "desc"}
+	res, err := r.store.Lot().GetFlats(context.Background(), limitInt, offsetInt, nil, orderBy)
+	if err != nil {
+		respond(c, http.StatusOK, nil, err.Error())
+		return
+	}
+
+	respond(c, http.StatusOK, res, "")
+}
+
+// GetLotHandler - получить полную информацию о конкретном лоте
+func (r *Router) GetLotHandler(c *gin.Context) {
+	lotID := c.Param("lotid")
+	lotIDInt, err := strconv.Atoi(lotID)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+
+	res, err := r.store.Lot().GetFlat(context.Background(), lotIDInt)
+	switch {
+	case err == sql.ErrNoRows:
+		respond(c, 404, res, LOT_NOT_FOUND)
+		return
+	case err != nil:
+		respond(c, http.StatusInternalServerError, nil, err.Error())
+	}
+
+	respond(c, http.StatusOK, res, "")
+}
+func respond(c *gin.Context, code int, result interface{}, err string) {
+	c.JSON(
+		code,
+		gin.H{
+			"result": result,
+			"error":  err,
 		},
 	)
 }

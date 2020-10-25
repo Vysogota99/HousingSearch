@@ -31,7 +31,7 @@ func (s *Server) Start() error {
 
 	s.authClient = authClient
 	s.initRouter()
-	s.router.Setup().Run()
+	s.router.Setup().Run(s.Conf.ServerPort)
 	return nil
 }
 
