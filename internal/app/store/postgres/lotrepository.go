@@ -15,7 +15,7 @@ type LotRepository struct {
 }
 
 // GetFlats - выводит список всех квартир(объявлений)
-func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, params map[string][2]string, orderBy [2]string) (models.Paginations, error) {
+func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, params map[string][2]string, orderBy []string) (models.Paginations, error) {
 	db, err := sql.Open("postgres", l.store.ConnString)
 	result := models.Paginations{}
 	result.CurrentPage = offset

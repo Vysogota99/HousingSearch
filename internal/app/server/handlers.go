@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"context"
 
@@ -15,10 +16,11 @@ import (
 )
 
 const (
-	INVALID_REQUEST_BODY  = "неправильное тело запроса"
-	INTERNAL_SERVER_ERROR = "внутренняя ошибка сервера"
+	INVALID_REQUEST_BODY  = "Веправильное тело запроса"
+	INTERNAL_SERVER_ERROR = "Внутренняя ошибка сервера"
 	ALREADY_EXISTS        = "Невозможно создать запись, она уже существует"
 	LOT_NOT_FOUND         = "Квартира не найдена"
+	BAD_ORDERBY_PARAMS    = "Параметры для сортировки установлены неправильно"
 )
 
 // TestAPIHandler - handle request from outside to check accessibility of the server
@@ -38,13 +40,13 @@ func (r *Router) TestAPIHandler(c *gin.Context) {
 // SignUPHandler - регистрация пользователя
 func (r *Router) SignUPHandler(c *gin.Context) {
 	type User struct {
-		Name            string `JSON:"name" binding:"required"`
-		LastName        string `JSON:"lastname" binding:"required"`
-		Sex             string `JSON:"sex" binding:"required"`
-		DateOfBirth     string `JSON:"dateOfBirth" binding:"required"`
-		Password        string `JSON:"password" binding:"required"`
-		TelephoneNumber string `JSON:"telephoneNumber" binding:"required"`
-		Role            string `JSON:"role" binding:"required"`
+		Name            string `json:"name" binding:"required"`
+		LastName        string `json:"lastname" binding:"required"`
+		Sex             string `json:"sex" binding:"required"`
+		DateOfBirth     string `json:"dateOfBirth" binding:"required"`
+		Password        string `json:"password" binding:"required"`
+		TelephoneNumber string `json:"telephoneNumber" binding:"required"`
+		Role            string `json:"role" binding:"required"`
 	}
 
 	user := &User{}
@@ -200,6 +202,7 @@ func (r *Router) PostLotHandler(c *gin.Context) {
 func (r *Router) GetLotsHandler(c *gin.Context) {
 	offset := c.DefaultQuery("offset", "1")
 	limit := c.DefaultQuery("limit", "10")
+	orderStr := c.DefaultQuery("order_by", "created_at desc")
 
 	offsetInt, err := strconv.Atoi(offset)
 	if err != nil {
@@ -213,7 +216,11 @@ func (r *Router) GetLotsHandler(c *gin.Context) {
 		return
 	}
 
-	orderBy := [2]string{"created_at", "desc"}
+	orderBy := strings.Split(orderStr, " ")
+	if cap(orderBy) != 2 {
+		respond(c, http.StatusBadRequest, nil, BAD_ORDERBY_PARAMS)
+	}
+
 	res, err := r.store.Lot().GetFlats(context.Background(), limitInt, offsetInt, nil, orderBy)
 	if err != nil {
 		respond(c, http.StatusOK, nil, err.Error())
@@ -235,14 +242,16 @@ func (r *Router) GetLotHandler(c *gin.Context) {
 	res, err := r.store.Lot().GetFlat(context.Background(), lotIDInt)
 	switch {
 	case err == sql.ErrNoRows:
-		respond(c, 404, res, LOT_NOT_FOUND)
+		respond(c, http.StatusNotFound, res, LOT_NOT_FOUND)
 		return
 	case err != nil:
 		respond(c, http.StatusInternalServerError, nil, err.Error())
+		return
 	}
 
 	respond(c, http.StatusOK, res, "")
 }
+
 func respond(c *gin.Context, code int, result interface{}, err string) {
 	c.JSON(
 		code,

@@ -14,7 +14,7 @@ type Store interface {
 // LotRepository - лот с жильем. При обращении к лоту, можно получить выборку
 // квартир, комнат, спальных мест с применением различных фильтров
 type LotRepository interface {
-	GetFlats(ctx context.Context, limit, offset int, params map[string][2]string, orderBy [2]string) (models.Paginations, error)
+	GetFlats(ctx context.Context, limit, offset int, params map[string][2]string, orderBy []string) (models.Paginations, error)
 	// GetFlatsFiltered(context.Context, int, int, ...map[string]string) ([]models.Lot, error)
 	GetFlat(context.Context, int) (*models.Lot, error)
 	Create(context.Context, *models.Lot) error
