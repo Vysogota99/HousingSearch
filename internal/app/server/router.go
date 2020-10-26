@@ -41,12 +41,9 @@ func (r *Router) Setup() *gin.Engine {
 		api.POST("/logout", r.HeadersMiddleware(), r.LogoutHandler)
 		api.POST("/login", r.HeadersMiddleware(), r.LogInHandler)
 
-		lot := api.Group("/lot")
-		{
-			lot.POST("/", r.HeadersMiddleware(), r.PostLotHandler)
-			lot.GET("/", r.HeadersMiddleware(), r.GetLotsHandler)
-			lot.GET("/:lotid", r.HeadersMiddleware(), r.GetLotHandler)
-		}
+		api.POST("/lot", r.HeadersMiddleware(), r.PostLotHandler)
+		api.GET("/lot", r.HeadersMiddleware(), r.GetLotsHandler)
+		api.GET("/lot/:lotid", r.HeadersMiddleware(), r.GetLotHandler)
 	}
 
 	return r.router
