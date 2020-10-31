@@ -7,8 +7,9 @@ import (
 
 // StorePSQL - реализует взаимодействие с базой данных
 type StorePSQL struct {
-	ConnString    string
-	lotRepository store.LotRepository
+	ConnString     string
+	lotRepository  store.LotRepository
+	roomRepository store.RoomRepository
 }
 
 // New - инициализирует Store
@@ -27,4 +28,15 @@ func (s *StorePSQL) Lot() store.LotRepository {
 	}
 
 	return s.lotRepository
+}
+
+// Room ...
+func (s *StorePSQL) Room() store.RoomRepository {
+	if s.roomRepository == nil {
+		s.roomRepository = &RoomRepository{
+			store: s,
+		}
+	}
+
+	return s.roomRepository
 }

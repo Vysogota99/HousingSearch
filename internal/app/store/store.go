@@ -9,6 +9,7 @@ import (
 // Store - ...
 type Store interface {
 	Lot() LotRepository
+	Room() RoomRepository
 }
 
 // LotRepository - лот с жильем. При обращении к лоту, можно получить выборку
@@ -22,8 +23,7 @@ type LotRepository interface {
 
 // RoomRepository - интерфейс для работы с структурой Room
 type RoomRepository interface {
-	GetRooms() (context.Context, []models.Room, error)
-	GetRoomsFiltered(context.Context, ...map[string]string) ([]models.Room, error)
-	GetRoom(int) (context.Context, *models.Lot, error)
+	GetRoomsForMap(ctx context.Context, limit int) ([]models.RoomExtended, error)
+	GetRoom(ctx context.Context, id int) (*models.Lot, error)
 	Create(context.Context, *models.Room) error
 }

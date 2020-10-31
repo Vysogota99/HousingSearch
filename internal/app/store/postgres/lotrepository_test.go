@@ -38,7 +38,7 @@ func TestCreateLot(t *testing.T) {
 
 func TestGetLots(t *testing.T) {
 	var store store.Store = New(connString)
-	orderBy := [2]string{"created_at", "desc"}
+	orderBy := []string{"created_at", "desc"}
 	lots, err := store.Lot().GetFlats(context.Background(), 3, 1, nil, orderBy)
 	assert.NoError(t, err)
 	assert.NotNil(t, lots)
@@ -50,7 +50,7 @@ func TestGetLotsFiltered(t *testing.T) {
 	filters := make(map[string][2]string)
 
 	keysArea := [2]string{">=", "15"}
-	orderBy := [2]string{"area", "asc"}
+	orderBy := []string{"area", "asc"}
 	filters["area"] = keysArea
 
 	lots, err := store.Lot().GetFlats(context.Background(), 10, 1, filters, orderBy)

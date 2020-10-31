@@ -71,7 +71,7 @@ var TestLot = Lot{
 			NumOFCupboards:        1,
 			Area:                  25,
 		},
-		{
+		Room{
 			LivingPlaces: []LivingPlace{
 				LivingPlace{
 					ResidentID:  2,

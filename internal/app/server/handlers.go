@@ -19,7 +19,7 @@ const (
 	INVALID_REQUEST_BODY  = "Веправильное тело запроса"
 	INTERNAL_SERVER_ERROR = "Внутренняя ошибка сервера"
 	ALREADY_EXISTS        = "Невозможно создать запись, она уже существует"
-	LOT_NOT_FOUND         = "Квартира не найдена"
+	LOT_NOT_FOUND         = "Квартира или комната не найдена"
 	BAD_ORDERBY_PARAMS    = "Параметры для сортировки установлены неправильно"
 )
 
@@ -250,6 +250,28 @@ func (r *Router) GetLotHandler(c *gin.Context) {
 	}
 
 	respond(c, http.StatusOK, res, "")
+}
+
+// GetRoomsMapHandler - получить список комнат, чтобы потом разместить их на карте
+func (r *Router) GetRoomsMapHandler(c *gin.Context) {
+	limit := c.DefaultQuery("limit", "1000")
+	limitInt, err := strconv.Atoi(limit)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+
+	rooms, err := r.store.Room().GetRoomsForMap(context.Background(), limitInt)
+	switch {
+	case err == sql.ErrNoRows:
+		respond(c, http.StatusNotFound, rooms, LOT_NOT_FOUND)
+		return
+	case err != nil:
+		respond(c, http.StatusInternalServerError, nil, err.Error())
+		return
+	}
+
+	respond(c, http.StatusOK, rooms, "")
 }
 
 func respond(c *gin.Context, code int, result interface{}, err string) {
