@@ -9,14 +9,14 @@ type Room struct {
 	CurrNumberOfResidents int           `json:"curr_number_of_residents,omitempty"`
 	Description           string        `binding:"required" json:"description,omitempty"`
 	NumOfWindows          int           `binding:"required" json:"num_of_windows"`
-	Balcony               bool          `binding:"required" json:"balcony"`
+	Balcony               bool          `json:"balcony"`
 	NumOfTables           int           `binding:"required" json:"num_of_tables"`
 	NumOfChairs           int           `binding:"required" json:"num_of_chairs"`
-	TV                    bool          `binding:"required" json:"tv"`
+	TV                    bool          `json:"tv"`
 	NumOFCupboards        int           `binding:"required" json:"num_of_cupboards"`
 	Area                  int           `binding:"required" json:"area,omitempty"`
-	AvgDeposit            float64       `json:"avg_deposit,omitempty,omitempty"`
-	AvgPrice              float64       `json:"avg_price,omitempty,omitempty"`
+	AvgDeposit            float64       `json:"avg_deposit,omitempty"`
+	AvgPrice              float64       `json:"avg_price,omitempty"`
 }
 
 // RoomExtended - расширенная структура Room с добавление полей структуры Lot

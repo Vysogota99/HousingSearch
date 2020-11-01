@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	INVALID_REQUEST_BODY  = "Веправильное тело запроса"
+	INVALID_REQUEST_BODY  = "Неправильное тело запроса"
 	INTERNAL_SERVER_ERROR = "Внутренняя ошибка сервера"
 	ALREADY_EXISTS        = "Невозможно создать запись, она уже существует"
 	LOT_NOT_FOUND         = "Квартира или комната не найдена"
@@ -252,16 +252,23 @@ func (r *Router) GetLotHandler(c *gin.Context) {
 	respond(c, http.StatusOK, res, "")
 }
 
-// GetRoomsMapHandler - получить список комнат, чтобы потом разместить их на карте
-func (r *Router) GetRoomsMapHandler(c *gin.Context) {
+// GetRoomsHandler - получить список комнат, чтобы потом разместить их на карте
+func (r *Router) GetRoomsHandler(c *gin.Context) {
 	limit := c.DefaultQuery("limit", "1000")
+	offset := c.DefaultQuery("offset", "1")
 	limitInt, err := strconv.Atoi(limit)
 	if err != nil {
 		respond(c, http.StatusBadRequest, nil, err.Error())
 		return
 	}
+	offsetInt, err := strconv.Atoi(offset)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
 
-	rooms, err := r.store.Room().GetRoomsForMap(context.Background(), limitInt)
+	fieldsToFilter := mapOfParams(c, []string{"maxresidents", "currnumberofresidents", "numofwindows", "balcony", "numoftables", "numofchairs", "tv", "numofcupboards", "area"})
+	rooms, err := r.store.Room().GetRooms(context.Background(), limitInt, offsetInt, fieldsToFilter)
 	switch {
 	case err == sql.ErrNoRows:
 		respond(c, http.StatusNotFound, rooms, LOT_NOT_FOUND)
@@ -274,6 +281,146 @@ func (r *Router) GetRoomsMapHandler(c *gin.Context) {
 	respond(c, http.StatusOK, rooms, "")
 }
 
+// GetRoomHandler - возвращает информацию о комнате
+func (r *Router) GetRoomHandler(c *gin.Context) {
+	roomID := c.Param("roomid")
+	roomIDInt, err := strconv.Atoi(roomID)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+
+	room, err := r.store.Room().GetRoom(context.Background(), roomIDInt)
+	switch {
+	case err == sql.ErrNoRows:
+		respond(c, http.StatusNotFound, room, LOT_NOT_FOUND)
+		return
+	case err != nil:
+		respond(c, http.StatusInternalServerError, nil, err.Error())
+		return
+	}
+
+	lpArray, err := r.store.Room().GetLivingPlace(context.Background(), roomIDInt)
+	switch {
+	case err == sql.ErrNoRows:
+		respond(c, http.StatusNotFound, lpArray, LOT_NOT_FOUND)
+		return
+	case err != nil:
+		respond(c, http.StatusInternalServerError, nil, err.Error())
+		return
+	}
+
+	room.LivingPlaces = lpArray
+	respond(c, http.StatusOK, room, "")
+}
+
+// PostRoomHandler ...
+func (r *Router) PostRoomHandler(c *gin.Context) {
+	room := models.Room{}
+	if err := c.ShouldBindJSON(&room); err != nil {
+		respond(c, http.StatusUnprocessableEntity, nil, err.Error())
+		return
+	}
+
+	if room.FlatID == 0 {
+		respond(c, http.StatusUnprocessableEntity, nil, INVALID_REQUEST_BODY)
+		return
+	}
+
+	if err := r.store.Room().Create(context.Background(), &room); err != nil {
+		respond(c, http.StatusInternalServerError, nil, INTERNAL_SERVER_ERROR)
+		return
+	}
+
+	respond(c, http.StatusCreated, room, "")
+}
+
+// DeleteRoomHandler - удаляет комнату
+func (r *Router) DeleteRoomHandler(c *gin.Context) {
+	roomID := c.Param("roomid")
+	roomIDInt, err := strconv.Atoi(roomID)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+
+	if err := r.store.Room().DeleteRoom(context.Background(), roomIDInt); err != nil {
+		respond(c, http.StatusInternalServerError, nil, INTERNAL_SERVER_ERROR)
+		return
+	}
+	respond(c, http.StatusOK, nil, "")
+}
+
+// DeleteLivingPlaceHandler - удаляет комнату
+func (r *Router) DeleteLivingPlaceHandler(c *gin.Context) {
+	lpID := c.Param("lpid")
+	lpIDInt, err := strconv.Atoi(lpID)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+
+	if err := r.store.Room().DeleteLivingPlace(context.Background(), lpIDInt); err != nil {
+		respond(c, http.StatusInternalServerError, nil, INTERNAL_SERVER_ERROR)
+		return
+	}
+	respond(c, http.StatusOK, nil, "")
+}
+
+// UpdateRoomHandler - обновляет данные о комнате
+func (r *Router) UpdateRoomHandler(c *gin.Context) {
+	roomID := c.Param("roomid")
+	roomIDInt, err := strconv.Atoi(roomID)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+
+	type request struct {
+		Fields map[string]interface{} `json:"fields" binding:"required"`
+	}
+	expRequest := &request{}
+	if err := c.ShouldBindJSON(&expRequest); err != nil {
+		respond(c, http.StatusUnprocessableEntity, nil, err.Error())
+		return
+	}
+
+	if err := r.store.Room().UpdateRoom(context.Background(), roomIDInt, expRequest.Fields); err != nil {
+		respond(c, http.StatusInternalServerError, nil, INTERNAL_SERVER_ERROR)
+		return
+	}
+
+	respond(c, http.StatusOK, nil, "")
+}
+
+// UpdateLivingPlaceHandler - ...
+func (r *Router) UpdateLivingPlaceHandler(c *gin.Context) {
+	lpID := c.Param("lpid")
+	lpIDInt, err := strconv.Atoi(lpID)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+
+	type request struct {
+		Fields map[string]interface{} `json:"fields" binding:"required"`
+	}
+	expRequest := &request{}
+	if err := c.ShouldBindJSON(&expRequest); err != nil {
+		respond(c, http.StatusUnprocessableEntity, nil, err.Error())
+		return
+	}
+
+	if err := r.store.Room().UpdateLivingPlace(context.Background(), lpIDInt, expRequest.Fields); err != nil {
+		respond(c, http.StatusInternalServerError, nil, INTERNAL_SERVER_ERROR)
+		return
+	}
+
+	respond(c, http.StatusOK, nil, "")
+}
+
+//====================================HELPERS================================================================
+
 func respond(c *gin.Context, code int, result interface{}, err string) {
 	c.JSON(
 		code,
@@ -282,4 +429,15 @@ func respond(c *gin.Context, code int, result interface{}, err string) {
 			"error":  err,
 		},
 	)
+}
+
+func mapOfParams(c *gin.Context, fields []string) map[string]string {
+	result := make(map[string]string)
+	for _, field := range fields {
+		if value := c.Query(field); value != "" {
+			result[field] = value
+		}
+	}
+
+	return result
 }

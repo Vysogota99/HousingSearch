@@ -45,7 +45,13 @@ func (r *Router) Setup() *gin.Engine {
 		api.GET("/lot", r.HeadersMiddleware(), r.GetLotsHandler)
 		api.GET("/lot/:lotid", r.HeadersMiddleware(), r.GetLotHandler)
 
-		api.GET("/rooms/map", r.HeadersMiddleware(), r.GetRoomsMapHandler)
+		api.GET("/rooms", r.HeadersMiddleware(), r.GetRoomsHandler)
+		api.GET("/rooms/:roomid", r.HeadersMiddleware(), r.GetRoomHandler)
+		api.POST("/rooms", r.HeadersMiddleware(), r.PostRoomHandler)
+		api.DELETE("/rooms/room/:roomid", r.HeadersMiddleware(), r.DeleteRoomHandler)
+		api.PATCH("/rooms/room/:roomid", r.HeadersMiddleware(), r.UpdateRoomHandler)
+		api.DELETE("/rooms/living_place/:lpid", r.HeadersMiddleware(), r.DeleteLivingPlaceHandler)
+		api.PATCH("/rooms/living_place/:lpid", r.HeadersMiddleware(), r.UpdateLivingPlaceHandler)
 	}
 
 	return r.router
