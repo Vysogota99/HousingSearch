@@ -78,8 +78,9 @@ func (r *RoomRepository) GetRooms(ctx context.Context, limit, offset int, filter
 				%s
 				LIMIT $1 OFFSET $1 * ($2 - 1)
 	`
-	condition := "WHERE "
+	condition := ""
 	if filters != nil && len(filters) > 0 {
+		condition = "WHERE "
 		for key, value := range filters {
 			table := ""
 			if _, ok := mapRoom[key]; ok {
