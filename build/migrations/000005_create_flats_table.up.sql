@@ -4,6 +4,8 @@ CREATE TABLE IF NOT EXISTS flats (
     address TEXT NOT NULL UNIQUE,
     long NUMERIC NOT NULL,
     lat NUMERIC NOT NULL,
+    price NUMERIC DEFAULT 0,
+    deposit NUMERIC DEFAULT 0,
     description TEXT NOT NULL,
     timeToMetroOnFoot INT,
     timeToMetroByTransport INT,

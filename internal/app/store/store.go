@@ -23,7 +23,7 @@ type LotRepository interface {
 
 // RoomRepository - интерфейс для работы с структурой Room
 type RoomRepository interface {
-	GetRooms(ctx context.Context, limit, offset int, filters map[string]string) ([]models.RoomExtended, error)
+	GetRooms(ctx context.Context, limit, offset int, filters map[string]string) (models.PaginationsRoom, error)
 	GetRoom(ctx context.Context, id int) (*models.Room, error)
 	Create(context.Context, *models.Room) error
 	GetLivingPlace(ctx context.Context, id int) ([]models.LivingPlace, error)

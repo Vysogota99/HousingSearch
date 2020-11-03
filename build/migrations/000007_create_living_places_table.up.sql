@@ -2,10 +2,10 @@ CREATE TABLE IF NOT EXISTS living_places(
     id serial PRIMARY KEY,
     roomID INT REFERENCES rooms(id) ON DELETE CASCADE,
     residentID INT REFERENCES users(id),
-    price NUMERIC NOT NULL,
+    price NUMERIC DEFAULT 0,
     description TEXT NOT NULL,
     numOFBerths INT NOT NULL,
-    deposit NUMERIC NOT NULL
+    deposit NUMERIC DEFAULT 0
 );
 
 CREATE INDEX living_places_price ON living_places(price);

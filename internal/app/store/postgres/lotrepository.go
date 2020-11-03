@@ -50,7 +50,7 @@ func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, params 
 
 	if params != nil {
 		queryFlats = `
-					SELECT f.id, f.address, f.floor, f.floortotal, f.metrostation, f.timetometrobytransport, f.area,
+					SELECT f.id, f.price, f.deposit, f.address, f.floor, f.floortotal, f.metrostation, f.timetometrobytransport, f.area,
 							r.maxresidents, r.currnumberofresidents, f.long, f.lat
 					FROM (
 						SELECT flatid, sum(maxresidents) as maxresidents, sum(currnumberofresidents) as currnumberofresidents
@@ -68,7 +68,7 @@ func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, params 
 
 	} else {
 		queryFlats = `
-			SELECT f.id, f.address, f.floor, f.floortotal, f.metrostation, f.timetometrobytransport, f.area,
+			SELECT f.id, f.price, f.deposit, f.address, f.floor, f.floortotal, f.metrostation, f.timetometrobytransport, f.area,
 					r.maxresidents, r.currnumberofresidents, f.long, f.lat
 			FROM (
 				SELECT flatid, sum(maxresidents) as maxresidents, sum(currnumberofresidents) as currnumberofresidents
@@ -94,7 +94,7 @@ func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, params 
 		lot := models.Lot{}
 		coord := models.Point{}
 		lot.Coordinates = coord
-		if err := rowsFlats.Scan(&lot.ID, &lot.Address, &lot.Floor, &lot.FloorsTotal, &lot.MetroStation, &lot.TimeToMetroByTransport, &lot.Area, &lot.TotalNumberOfResidents, &lot.CurrNumberOfResidents, &lot.Coordinates.X, &lot.Coordinates.Y); err != nil {
+		if err := rowsFlats.Scan(&lot.ID, &lot.Price, &lot.Deposit, &lot.Address, &lot.Floor, &lot.FloorsTotal, &lot.MetroStation, &lot.TimeToMetroByTransport, &lot.Area, &lot.TotalNumberOfResidents, &lot.CurrNumberOfResidents, &lot.Coordinates.X, &lot.Coordinates.Y); err != nil {
 			return result, err
 		}
 		lots = append(lots, lot)
@@ -106,7 +106,7 @@ func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, params 
 	}
 
 	queryRooms = `
-			SELECT r.flatid, r.id, r.maxresidents, r.currnumberofresidents, lp.avg_price, lp.avg_deposit
+			SELECT r.flatid, r.id, r.price, r.deposit, r.maxresidents, r.currnumberofresidents, lp.avg_price, lp.avg_deposit
 			FROM (
 				SELECT roomid, AVG(price) AS avg_price, AVG(deposit) AS avg_deposit
 				FROM living_places
@@ -130,7 +130,7 @@ func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, params 
 	dictWithRooms := make(map[string][]models.Room)
 	for rowsRooms.Next() {
 		room := models.Room{}
-		if err := rowsRooms.Scan(&room.FlatID, &room.ID, &room.MaxResidents, &room.CurrNumberOfResidents, &room.AvgPrice, &room.AvgDeposit); err != nil {
+		if err := rowsRooms.Scan(&room.FlatID, &room.ID, &room.Price, &room.Deposit, &room.MaxResidents, &room.CurrNumberOfResidents, &room.AvgPrice, &room.AvgDeposit); err != nil {
 			return result, err
 		}
 
@@ -171,7 +171,7 @@ func (l *LotRepository) GetFlat(ctx context.Context, id int) (*models.Lot, error
 	coord := models.Point{}
 	lot.Coordinates = coord
 	queryFlat := "SELECT * FROM flats WHERE id = $1"
-	err = tx.QueryRowContext(ctx, queryFlat, id).Scan(&lot.ID, &lot.OwnerID, &lot.Address, &lot.Coordinates.X, &lot.Coordinates.Y, &lot.Description,
+	err = tx.QueryRowContext(ctx, queryFlat, id).Scan(&lot.ID, &lot.OwnerID, &lot.Address, &lot.Coordinates.X, &lot.Coordinates.Y, &lot.Price, &lot.Deposit, &lot.Description,
 		&lot.TimeToMetroONFoot, &lot.TimeToMetroByTransport, &lot.MetroStation, &lot.Floor, &lot.FloorsTotal,
 		&lot.Area, &lot.Repairs, &lot.Elevators, &lot.Bathroom, &lot.Refrigerator, &lot.Dishwasher, &lot.GasStove,
 		&lot.ElectricStove, &lot.VacuumCleaner, &lot.Internet, &lot.Animals, &lot.Smoking, &lot.IsVisible, &lot.CreatedAt,
@@ -191,7 +191,7 @@ func (l *LotRepository) GetFlat(ctx context.Context, id int) (*models.Lot, error
 	roomsID := []interface{}{}
 	for rowsRooms.Next() {
 		room := models.Room{}
-		if err := rowsRooms.Scan(&room.ID, &room.FlatID, &room.MaxResidents, &room.Description, &room.CurrNumberOfResidents, &room.NumOfWindows,
+		if err := rowsRooms.Scan(&room.ID, &room.FlatID, &room.MaxResidents, &room.Description, &room.Price, &room.Deposit, &room.CurrNumberOfResidents, &room.NumOfWindows,
 			&room.Balcony, &room.NumOfTables, &room.NumOfChairs, &room.TV, &room.NumOFCupboards, &room.Area,
 		); err != nil {
 			return nil, err
@@ -286,11 +286,10 @@ func (l *LotRepository) Create(ctx context.Context, lot *models.Lot) error {
 
 		for j := 0; j < len(lot.Rooms[i].LivingPlaces); j++ {
 			err := tx.QueryRowContext(ctx, `
-								INSERT INTO living_places(roomid, price, description, numofberths, deposit)
-								VALUES($1, $2, $3, $4, $5) RETURNING id 
+								INSERT INTO living_places(roomid, description, numofberths)
+								VALUES($1, $2, $3) RETURNING id 
 					`,
-				lot.Rooms[i].ID, lot.Rooms[i].LivingPlaces[j].Price,
-				lot.Rooms[i].LivingPlaces[j].Description, lot.Rooms[i].LivingPlaces[j].NumOFBerth, lot.Rooms[i].LivingPlaces[j].Deposit,
+				lot.Rooms[i].ID, lot.Rooms[i].LivingPlaces[j].Description, lot.Rooms[i].LivingPlaces[j].NumOFBerth,
 			).Scan(&lot.Rooms[i].LivingPlaces[j].ID)
 			if err != nil {
 				return err

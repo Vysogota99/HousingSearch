@@ -17,6 +17,8 @@ type Room struct {
 	Area                  int           `binding:"required" json:"area,omitempty"`
 	AvgDeposit            float64       `json:"avg_deposit,omitempty"`
 	AvgPrice              float64       `json:"avg_price,omitempty"`
+	Price                 float64       `json:"room_price,omitempty"`
+	Deposit               float64       `json:"room_deposit,omitempty"`
 }
 
 // RoomExtended - расширенная структура Room с добавление полей структуры Lot
@@ -44,4 +46,21 @@ type RoomExtended struct {
 	FlatArea               int           `json:"flat_area,omitempty"`
 	Long                   float64       `json:"long,omitempty"`
 	Lat                    float64       `json:"lat,omitempty"`
+	Price                  float64       `json:"room_price,omitempty"`
+	Deposit                float64       `json:"room_deposit,omitempty"`
+}
+
+// MapRoom - ...
+var MapRoom = map[string]int8{
+	"area":                  1,
+	"maxresidents":          1,
+	"currnumberofresidents": 1,
+	"numofwindows":          1,
+	"balcony":               1,
+	"numoftables":           1,
+	"numofchairs":           1,
+	"tv":                    1,
+	"numofcupboards":        1,
+	"deposit":               1,
+	"price":                 1,
 }

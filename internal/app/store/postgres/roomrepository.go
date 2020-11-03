@@ -16,56 +16,37 @@ type RoomRepository struct {
 }
 
 // GetRooms ...
-func (r *RoomRepository) GetRooms(ctx context.Context, limit, offset int, filters map[string]string) ([]models.RoomExtended, error) {
+func (r *RoomRepository) GetRooms(ctx context.Context, limit, offset int, filters map[string]string) (models.PaginationsRoom, error) {
+	result := models.PaginationsRoom{}
+	result.CurrentPage = offset
+
 	db, err := sql.Open("postgres", r.store.ConnString)
 	defer db.Close()
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	tx, err := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	defer tx.Rollback()
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
-	mapRoom := map[string]int8{
-		"area":                  1,
-		"maxresidents":          1,
-		"currnumberofresidents": 1,
-		"numofwindows":          1,
-		"balcony":               1,
-		"numoftables":           1,
-		"numofchairs":           1,
-		"tv":                    1,
-		"numofcupboards":        1,
-	}
-	mapLp := map[string]int8{
-		"avg_price":   1,
-		"avg_deposit": 1,
-	}
-	mapFlat := map[string]int8{
-		"floor":                  1,
-		"floortotal":             1,
-		"metrostation":           1,
-		"timetometrobytransport": 1,
-		"timetometroonfoot":      1,
-		"long":                   1,
-		"lat":                    1,
-		"repair":                 1,
-		"elevator":               1,
-		"bathroom":               1,
-		"refrigerator":           1,
-		"dishwasher":             1,
-		"gasstove":               1,
-		"electricstove":          1,
-		"vacuumcleaner":          1,
-		"internet":               1,
-		"animals":                1,
-		"smoking":                1,
+	queryNumPages := `
+					SELECT CAST (count(f.id)/$1 + 1 AS integer) as num_pages 
+					FROM (
+						SELECT flatid, sum(maxresidents) as maxresidents, sum(currnumberofresidents) as currnumberofresidents
+						FROM rooms
+						GROUP BY flatid
+					) as r
+					INNER JOIN flats f ON f.id = r.flatid
+					WHERE f.isvisible = true
+	   `
+	if err := tx.QueryRowContext(ctx, queryNumPages, limit).Scan(&result.NumPages); err != nil {
+		return result, err
 	}
 
-	query := `SELECT r.flatid, r.area, r.id, r.maxresidents, r.currnumberofresidents, lp.avg_price, lp.avg_deposit,
+	query := `SELECT r.price, r.deposit, r.flatid, r.area, r.id, r.maxresidents, r.currnumberofresidents, lp.avg_price, lp.avg_deposit,
 				f.address, f.floor, f.floortotal, f.metrostation, f.timetometrobytransport, f.area,
 				f.long, f.lat
 				FROM (
@@ -83,13 +64,13 @@ func (r *RoomRepository) GetRooms(ctx context.Context, limit, offset int, filter
 		condition = "WHERE "
 		for key, value := range filters {
 			table := ""
-			if _, ok := mapRoom[key]; ok {
+			if _, ok := models.MapRoom[key]; ok {
 				table = "r."
 			}
-			if _, ok := mapFlat[key]; ok {
+			if _, ok := models.MapFlat[key]; ok {
 				table = "f."
 			}
-			if _, ok := mapLp[key]; ok {
+			if _, ok := models.MapLp[key]; ok {
 				table = "lp."
 			}
 			condition += table + key + value + " AND "
@@ -105,17 +86,18 @@ func (r *RoomRepository) GetRooms(ctx context.Context, limit, offset int, filter
 	rooms := []models.RoomExtended{}
 	for rows.Next() {
 		room := models.RoomExtended{}
-		if err := rows.Scan(&room.FlatID, &room.Area, &room.ID, &room.MaxResidents, &room.CurrNumberOfResidents, &room.AvgPrice, &room.AvgDeposit,
+		if err := rows.Scan(&room.Price, &room.Deposit, &room.FlatID, &room.Area, &room.ID, &room.MaxResidents, &room.CurrNumberOfResidents, &room.AvgPrice, &room.AvgDeposit,
 			&room.Address, &room.Floor, &room.FloorsTotal, &room.MetroStation, &room.TimeToMetroByTransport, &room.FlatArea, &room.Long, &room.Lat,
 		); err != nil {
-			return nil, err
+			return result, err
 		}
 
 		rooms = append(rooms, room)
 	}
 
 	tx.Commit()
-	return rooms, nil
+	result.Data = rooms
+	return result, nil
 }
 
 // GetRoom ...
@@ -132,11 +114,17 @@ func (r *RoomRepository) GetRoom(ctx context.Context, id int) (*models.Room, err
 	if err != nil {
 		return nil, err
 	}
-	err = tx.QueryRow("SELECT * FROM rooms WHERE ID = $1", id).Scan(&room.ID, &room.FlatID, &room.MaxResidents, &room.Description, &room.CurrNumberOfResidents, &room.NumOfWindows, &room.Balcony, &room.NumOfTables, &room.NumOfChairs, &room.TV, &room.NumOFCupboards, &room.Area)
+	err = tx.QueryRow("SELECT * FROM rooms WHERE ID = $1", id).Scan(&room.ID, &room.FlatID, &room.MaxResidents, &room.Description, &room.Price, &room.Deposit, &room.CurrNumberOfResidents, &room.NumOfWindows, &room.Balcony, &room.NumOfTables, &room.NumOfChairs, &room.TV, &room.NumOFCupboards, &room.Area)
 	if err != nil {
 		return nil, err
 	}
 
+	lp, err := r.GetLivingPlace(ctx, room.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	room.LivingPlaces = lp
 	tx.Commit()
 	return &room, nil
 }
@@ -170,10 +158,10 @@ func (r *RoomRepository) Create(ctx context.Context, room *models.Room) error {
 
 	for _, lp := range room.LivingPlaces {
 		err := tx.QueryRowContext(ctx, `
-								INSERT INTO living_places(roomid, price, description, numofberths, deposit)
-								VALUES($1, $2, $3, $4, $5) RETURNING id 
+								INSERT INTO living_places(roomid, description, numofberths)
+								VALUES($1, $2, $3) RETURNING id 
 					`,
-			room.ID, lp.Price, lp.Description, lp.NumOFBerth, lp.Deposit,
+			room.ID, lp.Description, lp.NumOFBerth,
 		).Scan(&lp.ID)
 		if err != nil {
 			return err

@@ -3,6 +3,8 @@ CREATE TABLE IF NOT EXISTS rooms (
     flatID INT REFERENCES flats(id) ON DELETE CASCADE NOT NULL,
     maxResidents INT NOT NULL,
     description TEXT NOT NULL,
+    price NUMERIC DEFAULT 0,
+    deposit NUMERIC DEFAULT 0,
     currNumberOfResidents INT NOT NULL,
     numOfWindows INT NOT NULL,
     balcony boolean NOT NULL,

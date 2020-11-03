@@ -10,10 +10,11 @@ import (
 )
 
 func TestCreateRoom(t *testing.T) {
+	flatiD := 3
 	var store store.Store = New(connString)
 	lot1 := models.TestLot
-	lot1.ID = 1
-	lot1.Rooms[0].FlatID = 1
+	lot1.ID = flatiD
+	lot1.Rooms[0].FlatID = flatiD
 
 	err := store.Room().Create(context.Background(), &lot1.Rooms[0])
 	assert.NoError(t, err)
@@ -30,7 +31,7 @@ func TestGetRoomsForMap(t *testing.T) {
 
 func TestGetRoom(t *testing.T) {
 	var store store.Store = New(connString)
-	var id = 1
+	var id = 5
 	r, err := store.Room().GetRoom(context.Background(), id)
 	assert.NoError(t, err)
 	assert.NotNil(t, r)

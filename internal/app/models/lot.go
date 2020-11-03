@@ -28,9 +28,11 @@ type Lot struct {
 	IsVisible               bool    `json:"is_visible,omitempty"`
 	TotalNumberOfResidents  int     `json:"total_num_of_residents,omitempty"`
 	CurrNumberOfResidents   int     `json:"curr_num_of_residents,omitempty"`
+	Price                   float64 `json:"flat_price,omitempty"`
 	AvgPricePerResident     float64 `json:"avg_price_per_resident,omitempty"`
 	AvgPriceDepositResident float64 `json:"avg_deposit_per_resident,omitempty"`
 	CreatedAt               string  `json:"created_at,omitempty"`
+	Deposit                 float64 `json:"flat_deposit,omitempty"`
 }
 
 // Point - ...
@@ -119,30 +121,26 @@ var TestLot = Lot{
 	IsVisible:              true,
 }
 
-// "rooms": [
-//     {
-//         "living_place": [
-//             {
-//                 "price": 20000,
-//                 "description": "Спальное место для холостяка на двуспальной кровати",
-//                 "num_of_berth": 2,
-//                 "deposit": 10000
-//             }
-//         ],
-//         "max_residents": 1,
-//         "description": "Просторная комната с окном, телевищором и рабочим столом. Прекрасно подойдет для парочки или для холостяка",
-//         "num_of_windows": 1,
-//         "balcony": true,
-//         "num_of_tables": 1,
-//         "num_of_chairs": 1,
-//         "tv": true,
-//         "num_of_cupboards": 1,
-//         "area": 20
-//     }
-// ],
-// "address": "Московская область, Одинцово, мкр. Одинцово-1, ул. Каштановая, 10",
-// "coordinates": {
-//     "lat": 55.654300,
-//     "long": 37.270850
-// },
-// "descripyion": "Сдается 1-комнатная квартира от собственника на длительный срок, в новом доме. Квартира расположена на 8 этаже многоэтажного жилого дома 2018 года постройки. В квартире выполнен ремонт с использованием дорогостоящих материалов. Весь ремонт продуман до мелочей и создан для комфортного проживания. Квартира оборудована всей необходимой новой мебелью и оснащена новейшей бытовой техникой. В квартире никто не проживал и ничем не пользовался.",
+// MapFlat - ...
+var MapFlat = map[string]int8{
+	"floor":                  1,
+	"floortotal":             1,
+	"metrostation":           1,
+	"timetometrobytransport": 1,
+	"timetometroonfoot":      1,
+	"long":                   1,
+	"lat":                    1,
+	"repair":                 1,
+	"elevator":               1,
+	"bathroom":               1,
+	"refrigerator":           1,
+	"dishwasher":             1,
+	"gasstove":               1,
+	"electricstove":          1,
+	"vacuumcleaner":          1,
+	"internet":               1,
+	"animals":                1,
+	"smoking":                1,
+	"price":                  1,
+	"deposit":                1,
+}
