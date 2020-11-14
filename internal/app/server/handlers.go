@@ -203,6 +203,9 @@ func (r *Router) GetLotsHandler(c *gin.Context) {
 	offset := c.DefaultQuery("offset", "1")
 	limit := c.DefaultQuery("limit", "10")
 	orderStr := c.DefaultQuery("order_by", "created_at desc")
+	long := c.DefaultQuery("long", "0")
+	lat := c.DefaultQuery("lat", "0")
+	radius := c.DefaultQuery("radius", "0")
 
 	offsetInt, err := strconv.Atoi(offset)
 	if err != nil {
@@ -221,7 +224,25 @@ func (r *Router) GetLotsHandler(c *gin.Context) {
 		respond(c, http.StatusBadRequest, nil, BAD_ORDERBY_PARAMS)
 	}
 
-	res, err := r.store.Lot().GetFlats(context.Background(), limitInt, offsetInt, nil, orderBy)
+	longFl64, err := strconv.ParseFloat(long, 64)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+
+	latFl64, err := strconv.ParseFloat(lat, 64)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+
+	radiusInt, err := strconv.Atoi(radius)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+
+	res, err := r.store.Lot().GetFlats(context.Background(), limitInt, offsetInt, nil, orderBy, longFl64, latFl64, radiusInt)
 	if err != nil {
 		respond(c, http.StatusOK, nil, err.Error())
 		return
@@ -239,7 +260,7 @@ func (r *Router) GetLotHandler(c *gin.Context) {
 		return
 	}
 
-	res, err := r.store.Lot().GetFlat(context.Background(), lotIDInt)
+	res, err := r.store.Lot().GetFlatAd(context.Background(), lotIDInt)
 	switch {
 	case err == sql.ErrNoRows:
 		respond(c, http.StatusNotFound, res, LOT_NOT_FOUND)
@@ -256,6 +277,10 @@ func (r *Router) GetLotHandler(c *gin.Context) {
 func (r *Router) GetRoomsHandler(c *gin.Context) {
 	limit := c.DefaultQuery("limit", "1000")
 	offset := c.DefaultQuery("offset", "1")
+	roomLong := c.DefaultQuery("long", "0")
+	roomLat := c.DefaultQuery("lat", "0")
+	roomRadius := c.DefaultQuery("radius", "0")
+
 	limitInt, err := strconv.Atoi(limit)
 	if err != nil {
 		respond(c, http.StatusBadRequest, nil, err.Error())
@@ -266,9 +291,24 @@ func (r *Router) GetRoomsHandler(c *gin.Context) {
 		respond(c, http.StatusBadRequest, nil, err.Error())
 		return
 	}
+	roomLongFl64, err := strconv.ParseFloat(roomLong, 64)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+	roomLatFl64, err := strconv.ParseFloat(roomLat, 64)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+	roomRadiusInt, err := strconv.Atoi(roomRadius)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
 
 	fieldsToFilter := mapOfParams(c, []string{"maxresidents", "currnumberofresidents", "numofwindows", "balcony", "numoftables", "numofchairs", "tv", "numofcupboards", "area"})
-	rooms, err := r.store.Room().GetRooms(context.Background(), limitInt, offsetInt, fieldsToFilter)
+	rooms, err := r.store.Room().GetRooms(context.Background(), limitInt, offsetInt, fieldsToFilter, roomLongFl64, roomLatFl64, roomRadiusInt)
 	switch {
 	case err == sql.ErrNoRows:
 		respond(c, http.StatusNotFound, rooms, LOT_NOT_FOUND)

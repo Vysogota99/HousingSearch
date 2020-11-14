@@ -19,10 +19,11 @@ const (
 	connStringPostgres = "user=housing_admin password=admin dbname=housing sslmode=disable"
 	secretCookieKey    = "secret"
 	authServicePort    = ":3001"
+	storageLevel       = 15
 )
 
 func TestGetLotsHandler(t *testing.T) {
-	var store store.Store = postgres.New(connStringPostgres)
+	var store store.Store = postgres.New(connStringPostgres, storageLevel)
 	router := NewRouter(serverPort, store, nil)
 
 	ts := httptest.NewServer(router.Setup())
@@ -32,8 +33,17 @@ func TestGetLotsHandler(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestGetLotsAroundHandler(t *testing.T) {
+	var store store.Store = postgres.New(connStringPostgres, storageLevel)
+	router := NewRouter(serverPort, store, nil)
+	ts := httptest.NewServer(router.Setup())
+
+	_, err := http.Get(fmt.Sprintf("%s/api/lot?long=45.667950&lat=39.656092&radius=1000", ts.URL))
+	assert.NoError(t, err)
+}
+
 func TestGetLotHandler(t *testing.T) {
-	var store store.Store = postgres.New(connStringPostgres)
+	var store store.Store = postgres.New(connStringPostgres, storageLevel)
 	router := NewRouter(serverPort, store, nil)
 
 	ts := httptest.NewServer(router.Setup())
@@ -44,7 +54,7 @@ func TestGetLotHandler(t *testing.T) {
 }
 
 func TestPostRoomHandler(t *testing.T) {
-	var store store.Store = postgres.New(connStringPostgres)
+	var store store.Store = postgres.New(connStringPostgres, storageLevel)
 	router := NewRouter(serverPort, store, nil)
 	ts := httptest.NewServer(router.Setup())
 
@@ -58,17 +68,17 @@ func TestPostRoomHandler(t *testing.T) {
 		},
 	}
 	room := models.Room{
-		LivingPlaces:   lp,
-		FlatID:         1,
-		MaxResidents:   2,
-		Description:    "text",
-		NumOfWindows:   1,
-		Balcony:        false,
-		NumOfTables:    1,
-		NumOfChairs:    2,
-		TV:             false,
-		NumOFCupboards: 1,
-		Area:           30,
+		LivingPlaces: lp,
+		FlatID:       1,
+		MaxResidents: 2,
+		Description:  "text",
+		Windows:      true,
+		Balcony:      false,
+		NumOfTables:  1,
+		NumOfChairs:  2,
+		TV:           false,
+		Furniture:    true,
+		Area:         30,
 	}
 
 	data, err := json.Marshal(room)
@@ -79,10 +89,19 @@ func TestPostRoomHandler(t *testing.T) {
 }
 
 func TestGetRooms(t *testing.T) {
-	var store store.Store = postgres.New(connStringPostgres)
+	var store store.Store = postgres.New(connStringPostgres, storageLevel)
 	router := NewRouter(serverPort, store, nil)
 	ts := httptest.NewServer(router.Setup())
 
 	_, err := http.Get(fmt.Sprintf("%s/api/rooms?balcony==true&tv==false&area=>15", ts.URL))
+	assert.NoError(t, err)
+}
+
+func TestGetRoomsAround(t *testing.T) {
+	var store store.Store = postgres.New(connStringPostgres, storageLevel)
+	router := NewRouter(serverPort, store, nil)
+	ts := httptest.NewServer(router.Setup())
+
+	_, err := http.Get(fmt.Sprintf("%s/api/rooms?long=55.667950&lat=37.656092&radius=1000", ts.URL))
 	assert.NoError(t, err)
 }

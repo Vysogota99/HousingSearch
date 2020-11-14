@@ -10,12 +10,14 @@ type StorePSQL struct {
 	ConnString     string
 	lotRepository  store.LotRepository
 	roomRepository store.RoomRepository
+	storageLevel   int
 }
 
 // New - инициализирует Store
-func New(connString string) *StorePSQL {
+func New(connString string, storageLevel int) *StorePSQL {
 	return &StorePSQL{
-		ConnString: connString,
+		ConnString:   connString,
+		storageLevel: storageLevel,
 	}
 }
 
@@ -23,7 +25,8 @@ func New(connString string) *StorePSQL {
 func (s *StorePSQL) Lot() store.LotRepository {
 	if s.lotRepository == nil {
 		s.lotRepository = &LotRepository{
-			store: s,
+			store:        s,
+			storageLevel: s.storageLevel,
 		}
 	}
 

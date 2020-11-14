@@ -1,6 +1,8 @@
 package server
 
 import (
+	"strconv"
+
 	"github.com/Vysogota99/HousingSearch/internal/app/store"
 	"github.com/Vysogota99/HousingSearch/internal/app/store/postgres"
 	"github.com/Vysogota99/HousingSearch/pkg/authService"
@@ -16,9 +18,10 @@ type Server struct {
 
 // NewServer - helper to init server
 func NewServer(conf *Config) (*Server, error) {
+	storageLevel, _ := strconv.Atoi(conf.StorageLevel)
 	return &Server{
 		Conf:  conf,
-		Store: postgres.New(conf.DBConnString),
+		Store: postgres.New(conf.DBConnString, storageLevel),
 	}, nil
 }
 

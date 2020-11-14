@@ -7,6 +7,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-redis/redis/v7 v7.4.0
+	github.com/golang/geo v0.0.0-20200730024412-e86565bf3f35
 	github.com/golang/protobuf v1.4.1
 	github.com/joho/godotenv v1.3.0
 	github.com/lib/pq v1.8.0

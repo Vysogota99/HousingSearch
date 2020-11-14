@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS living_places(
     roomID INT REFERENCES rooms(id) ON DELETE CASCADE,
     residentID INT REFERENCES users(id),
     price NUMERIC DEFAULT 0,
-    description TEXT NOT NULL,
+    description TEXT DEFAULT '',
     numOFBerths INT NOT NULL,
     deposit NUMERIC DEFAULT 0
 );

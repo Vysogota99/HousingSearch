@@ -13,6 +13,7 @@ type Config struct {
 	BaseProdURL     string
 	AuthServicePort string
 	DBConnString    string
+	StorageLevel    string
 }
 
 // NewConfig - helper to init config
@@ -47,6 +48,11 @@ func NewConfig() (*Config, error) {
 		return nil, fmt.Errorf("No DB_CONN_STRING in .env")
 	}
 
+	storageLevel, exists := os.LookupEnv("STORAGE_LEVEL")
+	if !exists {
+		return nil, fmt.Errorf("No STORAGE_LEVEL in .env")
+	}
+
 	return &Config{
 		ServerPort:      serverPort,
 		DBConnString:    dbConnString,
@@ -54,5 +60,6 @@ func NewConfig() (*Config, error) {
 		BaseLocURL:      baseLocURL,
 		BaseProdURL:     baseProdURL,
 		AuthServicePort: authServicePort,
+		StorageLevel:    storageLevel,
 	}, nil
 }

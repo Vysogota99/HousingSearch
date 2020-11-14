@@ -9,9 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	STORAGE_LEVEL = 15
+)
+
 func TestCreateRoom(t *testing.T) {
 	flatiD := 3
-	var store store.Store = New(connString)
+	var store store.Store = New(connString, STORAGE_LEVEL)
 	lot1 := models.TestLot
 	lot1.ID = flatiD
 	lot1.Rooms[0].FlatID = flatiD
@@ -21,16 +25,16 @@ func TestCreateRoom(t *testing.T) {
 }
 
 func TestGetRoomsForMap(t *testing.T) {
-	var store store.Store = New(connString)
+	var store store.Store = New(connString, STORAGE_LEVEL)
 	limit := 100
 	offset := 1
-	res, err := store.Room().GetRooms(context.Background(), limit, offset, nil)
+	res, err := store.Room().GetRooms(context.Background(), limit, offset, nil, 0, 0, 0)
 	assert.NoError(t, err)
 	assert.NotNil(t, res)
 }
 
 func TestGetRoom(t *testing.T) {
-	var store store.Store = New(connString)
+	var store store.Store = New(connString, STORAGE_LEVEL)
 	var id = 5
 	r, err := store.Room().GetRoom(context.Background(), id)
 	assert.NoError(t, err)
@@ -38,7 +42,7 @@ func TestGetRoom(t *testing.T) {
 }
 
 func TestGetLP(t *testing.T) {
-	var store store.Store = New(connString)
+	var store store.Store = New(connString, STORAGE_LEVEL)
 	var id = 1
 	lpArr, err := store.Room().GetLivingPlace(context.Background(), id)
 	assert.NoError(t, err)
@@ -46,7 +50,7 @@ func TestGetLP(t *testing.T) {
 }
 
 func TestUpdateRoom(t *testing.T) {
-	var store store.Store = New(connString)
+	var store store.Store = New(connString, STORAGE_LEVEL)
 	var id = 1
 	// fields := map[string]interface{}{
 	// 	"area": 30,
@@ -58,7 +62,7 @@ func TestUpdateRoom(t *testing.T) {
 }
 
 func TestUpdateLP(t *testing.T) {
-	var store store.Store = New(connString)
+	var store store.Store = New(connString, STORAGE_LEVEL)
 	var id = 5
 	fields := map[string]interface{}{
 		"price": 30,
@@ -69,7 +73,7 @@ func TestUpdateLP(t *testing.T) {
 }
 
 func TestDeleteRoom(t *testing.T) {
-	var store store.Store = New(connString)
+	var store store.Store = New(connString, STORAGE_LEVEL)
 	var id = 1
 	err := store.Room().DeleteRoom(context.Background(), id)
 

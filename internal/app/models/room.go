@@ -8,17 +8,24 @@ type Room struct {
 	MaxResidents          int           `binding:"required" json:"max_residents"`
 	CurrNumberOfResidents int           `json:"curr_number_of_residents,omitempty"`
 	Description           string        `binding:"required" json:"description,omitempty"`
-	NumOfWindows          int           `binding:"required" json:"num_of_windows"`
+	Windows               bool          `binding:"required" json:"windows"`
 	Balcony               bool          `json:"balcony"`
 	NumOfTables           int           `binding:"required" json:"num_of_tables"`
 	NumOfChairs           int           `binding:"required" json:"num_of_chairs"`
 	TV                    bool          `json:"tv"`
-	NumOFCupboards        int           `binding:"required" json:"num_of_cupboards"`
+	Furniture             bool          `binding:"required" json:"furnniture"`
 	Area                  int           `binding:"required" json:"area,omitempty"`
 	AvgDeposit            float64       `json:"avg_deposit,omitempty"`
 	AvgPrice              float64       `json:"avg_price,omitempty"`
 	Price                 float64       `json:"room_price,omitempty"`
 	Deposit               float64       `json:"room_deposit,omitempty"`
+}
+
+// RoomWorker ...
+type RoomWorker struct {
+	Rooms  []Room
+	FlatID int
+	Error  error
 }
 
 // RoomExtended - расширенная структура Room с добавление полей структуры Lot
@@ -29,12 +36,12 @@ type RoomExtended struct {
 	MaxResidents           int           `json:"max_residents"`
 	CurrNumberOfResidents  int           `json:"curr_number_of_residents"`
 	Description            string        `json:"description,omitempty"`
-	NumOfWindows           int           `json:"num_of_windows"`
+	Window                 bool          `binding:"required" json:"window"`
 	Balcony                bool          `json:"balcony"`
 	NumOfTables            int           `json:"num_of_tables"`
 	NumOfChairs            int           `json:"num_of_chairs"`
 	TV                     bool          `json:"tv"`
-	NumOFCupboards         int           `json:"num_of_cupboards"`
+	Furniture              bool          `binding:"required" json:"furnniture"`
 	Area                   int           `json:"area"`
 	AvgDeposit             float64       `json:"avg_deposit,omitempty"`
 	AvgPrice               float64       `json:"avg_price,omitempty"`

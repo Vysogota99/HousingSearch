@@ -1,44 +1,105 @@
 package models
 
-// Lot - жилье для сдачи
+// Lot - готовое объявление
 type Lot struct {
 	ID                      int     `json:"id,omitempty"`
 	OwnerID                 int     `json:"owner_id,omitempty"`
-	Rooms                   []Room  `binding:"required" json:"rooms,omitempty"`
-	Address                 string  `binding:"required" json:"address,omitempty"`
-	Coordinates             Point   `binding:"required" json:"coordinates,omitempty"`
-	Description             string  `binding:"required" json:"description,omitempty"`
-	TimeToMetroONFoot       int     `binding:"required" json:"ttmetro_food,omitempty"`
-	TimeToMetroByTransport  int     `binding:"required" json:"ttmetro_transport,omitempty"`
-	MetroStation            string  `binding:"required" json:"metro,omitempty"`
-	Floor                   int     `binding:"required" json:"floor,omitempty"`
-	FloorsTotal             int     `binding:"required" json:"floor_total,omitempty"`
-	Area                    int     `binding:"required" json:"area,omitempty"`
-	Repairs                 int     `binding:"required" json:"repair,omitempty"`
-	Elevators               bool    `binding:"required" json:"elevator,omitempty"`
-	Bathroom                int     `binding:"required" json:"bathroom,omitempty"`
-	Refrigerator            bool    `binding:"required" json:"refrigerator,omitempty"`
-	Dishwasher              bool    `binding:"required" json:"dishwasher,omitempty"`
-	GasStove                bool    `binding:"required" json:"gasStove,omitempty"`
-	ElectricStove           bool    `binding:"required" json:"electric_stove,omitempty"`
-	VacuumCleaner           bool    `json:"vacuumCleaner,omitempty"`
-	Internet                bool    `json:"internet,omitempty"`
-	Animals                 bool    `json:"animals,omitempty"`
-	Smoking                 bool    `json:"smoking,omitempty"`
+	Rooms                   []Room  `json:"rooms,omitempty"`
+	Address                 string  `json:"address,omitempty"`
+	Coordinates             Point   `json:"coordinates,omitempty"`
+	Description             string  `json:"description,omitempty"`
+	TimeToMetroONFoot       int     `json:"ttmetro_food,omitempty"`
+	TimeToMetroByTransport  int     `json:"ttmetro_transport,omitempty"`
+	MetroStation            string  `json:"metro,omitempty"`
+	Floor                   int     `json:"floor,omitempty"`
+	FloorsTotal             int     `json:"floor_total,omitempty"`
+	Area                    int     `json:"area,omitempty"`
+	Repairs                 int     `json:"repair,omitempty"`
+	PassElevator            bool    `json:"passenger_elevator"`
+	ServiceElevator         bool    `json:"serve_elevator"`
+	Kitchen                 bool    `json:"kitchen"`
+	MicrowaveOven           bool    `json:"microwave_oven"`
+	Bathroom                int     `json:"bathroom,omitempty"`
+	Refrigerator            bool    `json:"refrigerator"`
+	Dishwasher              bool    `json:"dishwasher"`
+	Stove                   int     `json:"stove,omitempty"`
+	VacuumCleaner           bool    `json:"vacuum_cleaner"`
+	Dryer                   bool    `json:"dryer"`
+	Internet                bool    `json:"internet"`
+	Animals                 bool    `json:"animals"`
+	Smoking                 bool    `json:"smoking"`
+	Heating                 int     `json:"heating,omitempty"`
 	IsVisible               bool    `json:"is_visible,omitempty"`
 	TotalNumberOfResidents  int     `json:"total_num_of_residents,omitempty"`
 	CurrNumberOfResidents   int     `json:"curr_num_of_residents,omitempty"`
 	Price                   float64 `json:"flat_price,omitempty"`
+	Deposit                 float64 `json:"flat_deposit,omitempty"`
 	AvgPricePerResident     float64 `json:"avg_price_per_resident,omitempty"`
 	AvgPriceDepositResident float64 `json:"avg_deposit_per_resident,omitempty"`
 	CreatedAt               string  `json:"created_at,omitempty"`
-	Deposit                 float64 `json:"flat_deposit,omitempty"`
+	UpdatedAt               string  `json:"updated_at,omitempty"`
+	IsConstructor           bool
+}
+
+// FlatConstructor - конструктор квартиры
+type FlatConstructor struct {
+	ID                     int    `json:"id"`
+	OwnerID                int    `json:"owner_id"`
+	Rooms                  []Room `binding:"required" json:"rooms"`
+	Address                string `binding:"required" json:"address"`
+	Coordinates            Point  `binding:"required" json:"coordinates"`
+	TimeToMetroONFoot      int    `binding:"required" json:"ttmetro_food"`
+	TimeToMetroByTransport int    `binding:"required" json:"ttmetro_transport"`
+	MetroStation           string `binding:"required" json:"metro"`
+	Floor                  int    `binding:"required" json:"floor"`
+	FloorsTotal            int    `binding:"required" json:"floor_total"`
+	Area                   int    `binding:"required" json:"area"`
+	Repairs                int    `binding:"required" json:"repair"`
+	PassElevator           bool   `binding:"required" json:"passenger_elevator"`
+	ServiceElevator        bool   `binding:"required" json:"serve_elevator"`
+	Kitchen                bool   `binding:"required" json:"kitchen"`
+	MicrowaveOven          bool   `binding:"required" json:"microwave_oven"`
+	Bathroom               int    `binding:"required" json:"bathroom"`
+	Refrigerator           bool   `binding:"required" json:"refrigerator"`
+	Dishwasher             bool   `binding:"required" json:"dishwasher"`
+	Stove                  int    `binding:"required" json:"stove"`
+	VacuumCleaner          bool   `binding:"required" json:"vacuum_cleaner"`
+	Dryer                  bool   `binding:"required" json:"dryer"`
+	Internet               bool   `binding:"required" json:"internet"`
+	Animals                bool   `binding:"required" json:"animals"`
+	Smoking                bool   `binding:"required" json:"smoking"`
+	TotalNumberOfResidents int    `binding:"required" json:"total_num_of_residents"`
+	Heating                int    `binding:"required" json:"heating"`
+	CreatedAt              string `json:"created_at"`
+	UpdatedAt              string `json:"updated_at"`
 }
 
 // Point - ...
 type Point struct {
-	X float64 `binding:"required" json:"lat"`
-	Y float64 `binding:"required" json:"lon"`
+	X      float64 `binding:"required" json:"lat"`
+	Y      float64 `binding:"required" json:"lon"`
+	CellID uint64
+}
+
+// Repair - тип ремонта в квартире
+type Repair struct {
+	ID          int
+	Name        string
+	Description string
+}
+
+// Stove - тип плиты
+type Stove struct {
+	ID          int
+	Name        string
+	Description string
+}
+
+// Heating - отопление
+type Heating struct {
+	ID          int
+	Name        string
+	Description string
 }
 
 // TestLot ...
@@ -48,29 +109,22 @@ var TestLot = Lot{
 		Room{
 			LivingPlaces: []LivingPlace{
 				LivingPlace{
-					ResidentID:  2,
-					Price:       5000,
-					Description: "В то время некий безымянный печатник создал большую коллекцию размеров и форм шрифтов, используя Lorem Ipsum для распечатки образцов.",
-					NumOFBerth:  1,
-					Deposit:     5000,
+					ResidentID: 2,
+					NumOFBerth: 1,
 				},
 				LivingPlace{
-					ResidentID:  2,
-					Price:       5000,
-					Description: "Здесь ваш текст.. Многие программы электронной вёрстки и редакторы HTML используют Lorem Ipsum в качестве текста по умолчанию.",
-					NumOFBerth:  1,
-					Deposit:     5000,
+					ResidentID: 2,
+					NumOFBerth: 1,
 				},
 			},
 			MaxResidents:          2,
 			CurrNumberOfResidents: 0,
-			Description:           "Комната 1",
-			NumOfWindows:          1,
+			Windows:               true,
 			Balcony:               false,
 			NumOfTables:           2,
 			NumOfChairs:           4,
 			TV:                    false,
-			NumOFCupboards:        1,
+			Furniture:             true,
 			Area:                  25,
 		},
 		Room{
@@ -86,12 +140,12 @@ var TestLot = Lot{
 			MaxResidents:          2,
 			CurrNumberOfResidents: 0,
 			Description:           "Комната 2",
-			NumOfWindows:          1,
+			Windows:               true,
 			Balcony:               true,
 			NumOfTables:           1,
 			NumOfChairs:           1,
 			TV:                    true,
-			NumOFCupboards:        1,
+			Furniture:             true,
 			Area:                  20,
 		},
 	},
@@ -100,7 +154,6 @@ var TestLot = Lot{
 		X: 55.667959,
 		Y: 37.656157,
 	},
-	Description:            "Впервые сдаётся светлая 1-комнатная квартира с евроремонтом, смежным санузлом и балконом в ЖК Одинбург, без депозита! Полы  ламинат и плитка. Квартира оборудована кухонным гарнитуром, мебелью и бытовой техникой. Есть кондиционер, холодильник, телевизор, плита, душ, посудомоечная и стиральная машины. Проведён интернет. Окна выходят на улицу, есть бесплатная парковка.Собственник готов заселить не более 2 взрослых жильцов или заключить договор с юридическим лицом. Гражданство: РФ. С домашним питомцем нельзя. Дом находится в районе с развитой инфраструктурой: в пешей доступности  школы и детские сады, продуктовые супермаркеты, аптеки и различные медицинские учреждения, салоны красоты и парикмахерские, фитнес-клубы, кафе и закусочные. До МЦД-1 Одинцово  14 минут на общественном транспорте, до м. Кунцевская  40 минут. Автомобилистам будет удобно выезжать на МКАД через Минское шоссе",
 	TimeToMetroONFoot:      15,
 	TimeToMetroByTransport: 10,
 	MetroStation:           "Коломенская",
@@ -108,17 +161,20 @@ var TestLot = Lot{
 	FloorsTotal:            12,
 	Area:                   60,
 	Repairs:                1,
-	Elevators:              true,
+	PassElevator:           true,
+	ServiceElevator:        true,
+	Kitchen:                true,
+	MicrowaveOven:          true,
 	Bathroom:               1,
 	Refrigerator:           true,
 	Dishwasher:             false,
-	GasStove:               true,
-	ElectricStove:          false,
+	Stove:                  1,
+	Dryer:                  true,
 	VacuumCleaner:          false,
 	Internet:               true,
 	Animals:                false,
+	Heating:                1,
 	Smoking:                true,
-	IsVisible:              true,
 }
 
 // MapFlat - ...

@@ -3,19 +3,28 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"strconv"
+	"strings"
 
 	"github.com/Vysogota99/HousingSearch/internal/app/models"
+	"github.com/golang/geo/s2"
+	_ "github.com/lib/pq"
 )
 
 // LotRepository ...
 type LotRepository struct {
-	store *StorePSQL
+	store        *StorePSQL
+	storageLevel int
 }
 
-// GetFlats - выводит список всех квартир(объявлений)
-func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, params map[string][2]string, orderBy []string) (models.Paginations, error) {
+const (
+	STOP = "Вызвана остановка"
+)
+
+// GetFlats - постранично выводит список квартир(объявлений)
+func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, filters map[string]string, orderBy []string, long, lat float64, radius int) (models.Paginations, error) {
 	db, err := sql.Open("postgres", l.store.ConnString)
 	result := models.Paginations{}
 	result.CurrentPage = offset
@@ -27,122 +36,107 @@ func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, params 
 
 	tx, err := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	defer tx.Rollback()
-
 	if err != nil {
 		return result, err
 	}
 
-	queryNumPages := `
-					SELECT CAST (count(f.id)/$1 + 1 AS integer) as num_pages 
-					FROM (
-						SELECT flatid, sum(maxresidents) as maxresidents, sum(currnumberofresidents) as currnumberofresidents
-						FROM rooms
-						GROUP BY flatid
-					) as r
-					INNER JOIN flats f ON f.id = r.flatid
-					WHERE f.isvisible = true
-	   `
+	// Поиск квартиры в радиусе
+	condition := ""
+	if long != 0 || lat != 0 || radius != 0 {
+		condition = "WHERE cell_id IN (%s) AND "
+		cu := searchCellUnion(long, lat, radius, l.store.storageLevel)
+		cellIDS := make([]string, 0)
+		for _, item := range cu {
+			cellIDS = append(cellIDS, strconv.Itoa(int(item)))
+		}
+
+		cellIDSStr := strings.Join(cellIDS, ",")
+		condition = fmt.Sprintf(condition, cellIDSStr)
+	}
+	// Дополнительные фильтры
+	if filters != nil && len(filters) > 0 {
+		if condition == "" {
+			condition = "WHERE "
+		}
+
+		for key, value := range filters {
+			condition += key + value + " AND "
+		}
+	}
+
+	if condition == "" {
+		condition = "WHERE is_visible = true AND is_constructor = false"
+	} else {
+		condition += "is_visible = true AND is_constructor = false"
+	}
+	// Конец фильтров
+
+	queryNumPages := `SELECT CAST (count(id)/$1 + 1 AS integer) as num_pages 
+				      FROM flats
+					  %s`
+	queryNumPages = fmt.Sprintf(queryNumPages, condition)
 	if err := tx.QueryRowContext(ctx, queryNumPages, limit).Scan(&result.NumPages); err != nil {
 		return result, err
 	}
-	var queryFlats string
-	var queryRooms string
 
-	if params != nil {
-		queryFlats = `
-					SELECT f.id, f.price, f.deposit, f.address, f.floor, f.floortotal, f.metrostation, f.timetometrobytransport, f.area,
-							r.maxresidents, r.currnumberofresidents, f.long, f.lat
-					FROM (
-						SELECT flatid, sum(maxresidents) as maxresidents, sum(currnumberofresidents) as currnumberofresidents
-						FROM rooms
-						GROUP BY flatid
-					) as r
-					INNER JOIN flats f ON f.id = r.flatid
-					WHERE f.isvisible = true `
-
-		for key, value := range params {
-			queryFlats += " AND f." + key + value[0] + value[1]
-		}
-
-		queryFlats += "ORDER BY " + orderBy[0] + " " + orderBy[1] + " LIMIT $1 OFFSET $1 * ($2 - 1)"
-
-	} else {
-		queryFlats = `
-			SELECT f.id, f.price, f.deposit, f.address, f.floor, f.floortotal, f.metrostation, f.timetometrobytransport, f.area,
-					r.maxresidents, r.currnumberofresidents, f.long, f.lat
-			FROM (
-				SELECT flatid, sum(maxresidents) as maxresidents, sum(currnumberofresidents) as currnumberofresidents
-				FROM rooms
-				GROUP BY flatid
-			) as r
-			INNER JOIN flats f ON f.id = r.flatid
-			WHERE f.isvisible = true ` + "ORDER BY " + orderBy[0] + " " + orderBy[1] + " LIMIT $1 OFFSET $1 * ($2 - 1)"
-	}
-
+	queryFlats := ` SELECT id, owner_id, address, long, long, price, deposit, description, time_to_metro_on_foot,
+					time_to_metro_by_transport, metro_station, floor, floor_total, area, repair, pass_elevator,
+					service_elevator, kitchen, microwave_oven, bathroom, refrigerator, dishwasher, stove, vacuum_cleaner,
+					dryer, internet, animals, smoking, heating, is_visible, is_constructor, created_at, updated_at
+					FROM flats
+					%s
+					LIMIT $1 OFFSET $1 * ($2 - 1)`
+	queryFlats = fmt.Sprintf(queryFlats, condition)
 	log.Println(queryFlats)
-	rowsFlats, err := tx.QueryContext(ctx, queryFlats, limit, offset)
-	defer rowsFlats.Close()
+
+	rows, err := tx.QueryContext(ctx, queryFlats, limit, offset)
 	if err != nil {
 		return result, err
 	}
 
-	i := 0
-	flatsID := []interface{}{}
-	lots := []models.Lot{}
-
-	for rowsFlats.Next() {
+	flatsIdsSlice := make([]string, 0)
+	for rows.Next() {
 		lot := models.Lot{}
-		coord := models.Point{}
-		lot.Coordinates = coord
-		if err := rowsFlats.Scan(&lot.ID, &lot.Price, &lot.Deposit, &lot.Address, &lot.Floor, &lot.FloorsTotal, &lot.MetroStation, &lot.TimeToMetroByTransport, &lot.Area, &lot.TotalNumberOfResidents, &lot.CurrNumberOfResidents, &lot.Coordinates.X, &lot.Coordinates.Y); err != nil {
+		lot.Coordinates = models.Point{}
+		if err := rows.Scan(&lot.ID, &lot.OwnerID, &lot.Address, &lot.Coordinates.X, &lot.Coordinates.Y, &lot.Price, &lot.Deposit, &lot.Description, &lot.TimeToMetroONFoot, &lot.TimeToMetroByTransport,
+			&lot.MetroStation, &lot.Floor, &lot.FloorsTotal, &lot.Area, &lot.Repairs, &lot.PassElevator, &lot.ServiceElevator, &lot.Kitchen, &lot.MicrowaveOven, &lot.Bathroom, &lot.Refrigerator, &lot.Dishwasher,
+			&lot.Stove, &lot.VacuumCleaner, &lot.Dryer, &lot.Internet, &lot.Animals, &lot.Smoking, &lot.Heating, &lot.IsVisible, &lot.IsConstructor, &lot.CreatedAt, &lot.UpdatedAt,
+		); err != nil {
 			return result, err
 		}
-		lots = append(lots, lot)
-		flatsID = append(flatsID, lot.ID)
-		i++
-	}
-	if cap(flatsID) == 0 {
-		return result, sql.ErrNoRows
+
+		flatsIdsSlice = append(flatsIdsSlice, strconv.Itoa(lot.ID))
+		result.Data = append(result.Data, lot)
 	}
 
-	queryRooms = `
-			SELECT r.flatid, r.id, r.price, r.deposit, r.maxresidents, r.currnumberofresidents, lp.avg_price, lp.avg_deposit
-			FROM (
-				SELECT roomid, AVG(price) AS avg_price, AVG(deposit) AS avg_deposit
-				FROM living_places
-				GROUP BY roomid
-			) as lp
-			INNER JOIN rooms r ON r.id = lp.roomid
-			WHERE r.flatid in ($1`
-
-	for j := 2; j <= len(flatsID); j++ {
-		queryRooms += ", $" + strconv.Itoa(j)
+	if len(flatsIdsSlice) == 0 {
+		return result, nil
 	}
-	queryRooms += ")"
-	log.Println(queryRooms)
 
-	rowsRooms, err := tx.QueryContext(ctx, queryRooms, flatsID...)
-	defer rowsRooms.Close()
+	queryRooms := `SELECT id, flat_id, max_residents, description, price, deposit, curr_number_of_residents,
+				   balcony, num_of_tables, num_of_chairs, tv, furniture, area, windows
+				   FROM rooms WHERE ID IN (%s)`
+	queryRooms = fmt.Sprintf(queryRooms, strings.Join(flatsIdsSlice, ","))
+	rows, err = tx.QueryContext(ctx, queryRooms)
 	if err != nil {
 		return result, err
 	}
 
-	dictWithRooms := make(map[string][]models.Room)
-	for rowsRooms.Next() {
+	dictRooms := map[int][]models.Room{}
+
+	for rows.Next() {
 		room := models.Room{}
-		if err := rowsRooms.Scan(&room.FlatID, &room.ID, &room.Price, &room.Deposit, &room.MaxResidents, &room.CurrNumberOfResidents, &room.AvgPrice, &room.AvgDeposit); err != nil {
+		if err := rows.Scan(&room.ID, &room.FlatID, &room.MaxResidents, &room.Description, &room.Price, &room.Deposit, &room.CurrNumberOfResidents,
+			&room.Balcony, &room.NumOfTables, &room.NumOfChairs, &room.TV, &room.Furniture, &room.Area, &room.Windows); err != nil {
 			return result, err
 		}
 
-		dictWithRooms[strconv.Itoa(room.FlatID)] = append(dictWithRooms[strconv.Itoa(room.FlatID)], room)
+		dictRooms[room.FlatID] = append(dictRooms[room.FlatID], room)
 	}
 
-	for i = 0; i < len(lots); i++ {
-		lots[i].Rooms = dictWithRooms[strconv.Itoa(lots[i].ID)]
+	for index, lot := range result.Data {
+		result.Data[index].Rooms = dictRooms[lot.ID]
 	}
-
-	tx.Commit()
-	result.Data = lots
 	return result, nil
 }
 
@@ -152,8 +146,8 @@ func (l *LotRepository) GetFlatsFiltered(ctx context.Context, limit, offset int,
 	return nil, nil
 }
 
-// GetFlat - выводит конкретную квартиру(объявление)
-func (l *LotRepository) GetFlat(ctx context.Context, id int) (*models.Lot, error) {
+// GetFlatAd - выводит конкретную квартиру(объявление)
+func (l *LotRepository) GetFlatAd(ctx context.Context, id int) (*models.Lot, error) {
 	db, err := sql.Open("postgres", l.store.ConnString)
 	defer db.Close()
 	if err != nil {
@@ -170,17 +164,24 @@ func (l *LotRepository) GetFlat(ctx context.Context, id int) (*models.Lot, error
 	lot := models.Lot{}
 	coord := models.Point{}
 	lot.Coordinates = coord
-	queryFlat := "SELECT * FROM flats WHERE id = $1"
+	queryFlat := `SELECT id, owner_id, address, long, long, price, deposit, description, time_to_metro_on_foot,
+				  time_to_metro_by_transport, metro_station, floor, floor_total, area, repair, pass_elevator,
+				  service_elevator, kitchen, microwave_oven, bathroom, refrigerator, dishwasher, stove, vacuum_cleaner,
+				  dryer, internet, animals, smoking, heating, is_visible, is_constructor, created_at, updated_at
+				  FROM flats WHERE id = $1 AND is_visible = true AND is_constructor = false`
 	err = tx.QueryRowContext(ctx, queryFlat, id).Scan(&lot.ID, &lot.OwnerID, &lot.Address, &lot.Coordinates.X, &lot.Coordinates.Y, &lot.Price, &lot.Deposit, &lot.Description,
 		&lot.TimeToMetroONFoot, &lot.TimeToMetroByTransport, &lot.MetroStation, &lot.Floor, &lot.FloorsTotal,
-		&lot.Area, &lot.Repairs, &lot.Elevators, &lot.Bathroom, &lot.Refrigerator, &lot.Dishwasher, &lot.GasStove,
-		&lot.ElectricStove, &lot.VacuumCleaner, &lot.Internet, &lot.Animals, &lot.Smoking, &lot.IsVisible, &lot.CreatedAt,
+		&lot.Area, &lot.Repairs, &lot.PassElevator, &lot.ServiceElevator, &lot.Kitchen, &lot.MicrowaveOven, &lot.Bathroom, &lot.Refrigerator, &lot.Dishwasher, &lot.Stove,
+		&lot.VacuumCleaner, &lot.Dryer, &lot.Internet, &lot.Animals, &lot.Smoking, &lot.Heating, &lot.IsVisible, &lot.IsConstructor, &lot.CreatedAt, &lot.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	queryRooms := "SELECT * FROM rooms WHERE flatid = $1"
+	queryRooms := `SELECT id, flat_id, max_residents, description, price,
+				   deposit, curr_number_of_residents, balcony, num_of_tables,
+				   num_of_chairs, tv, furniture, area, windows 
+				   FROM rooms WHERE flat_id = $1`
 	rooms := []models.Room{}
 	rowsRooms, err := tx.QueryContext(ctx, queryRooms, id)
 	defer rowsRooms.Close()
@@ -191,8 +192,8 @@ func (l *LotRepository) GetFlat(ctx context.Context, id int) (*models.Lot, error
 	roomsID := []interface{}{}
 	for rowsRooms.Next() {
 		room := models.Room{}
-		if err := rowsRooms.Scan(&room.ID, &room.FlatID, &room.MaxResidents, &room.Description, &room.Price, &room.Deposit, &room.CurrNumberOfResidents, &room.NumOfWindows,
-			&room.Balcony, &room.NumOfTables, &room.NumOfChairs, &room.TV, &room.NumOFCupboards, &room.Area,
+		if err := rowsRooms.Scan(&room.ID, &room.FlatID, &room.MaxResidents, &room.Description, &room.Price, &room.Deposit, &room.CurrNumberOfResidents,
+			&room.Balcony, &room.NumOfTables, &room.NumOfChairs, &room.TV, &room.Furniture, &room.Area, &room.Windows,
 		); err != nil {
 			return nil, err
 		}
@@ -201,7 +202,7 @@ func (l *LotRepository) GetFlat(ctx context.Context, id int) (*models.Lot, error
 		rooms = append(rooms, room)
 	}
 
-	queryLivingPlaces := "SELECT * FROM living_places WHERE roomid IN ($1"
+	queryLivingPlaces := "SELECT id, roomid, residentid, price, description, numofberths, deposit FROM living_places WHERE roomid IN ($1"
 	for i := 2; i <= cap(roomsID); i++ {
 		queryLivingPlaces += ", $" + strconv.Itoa(i)
 	}
@@ -237,7 +238,7 @@ func (l *LotRepository) GetFlat(ctx context.Context, id int) (*models.Lot, error
 	return &lot, nil
 }
 
-// Create - создает объявление
+// Create - создает квартиру в конструкторе
 func (l *LotRepository) Create(ctx context.Context, lot *models.Lot) error {
 	db, err := sql.Open("postgres", l.store.ConnString)
 	defer db.Close()
@@ -252,19 +253,23 @@ func (l *LotRepository) Create(ctx context.Context, lot *models.Lot) error {
 		return err
 	}
 
+	// нахождение номера ячейки с заданным уровнем
+	latlong := s2.LatLngFromDegrees(lot.Coordinates.Y, lot.Coordinates.X)
+	cellID := s2.CellIDFromLatLng(latlong)
+	lot.Coordinates.CellID = uint64(cellID.Parent(l.storageLevel))
+
 	err = tx.QueryRowContext(ctx, `
-									INSERT INTO flats(ownerID, address, long, lat, description, 
-													  timeToMetroOnFoot, timeToMetroByTransport, metrostation,
-													  floor, floorTotal, area, repair, elevator,
-													  bathroom, refrigerator, dishwasher, gasStove,
-													  electricStove, vacuumcleaner, internet,
-													  animals, smoking)
-									VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) 
+									INSERT INTO flats(owner_id, address, long, lat, cell_id,
+													  time_to_metro_on_foot, time_to_metro_by_transport, metro_station,
+													  floor, floor_total, area, repair, pass_elevator, service_elevator,
+													  kitchen, microwave_oven, bathroom, refrigerator, dishwasher, stove,
+													   vacuum_cleaner, dryer, internet, animals, smoking, heating)
+									VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26) 
 									RETURNING id
 								`,
-		lot.OwnerID, lot.Address, lot.Coordinates.X, lot.Coordinates.Y, lot.Description, lot.TimeToMetroONFoot, lot.TimeToMetroByTransport,
-		lot.MetroStation, lot.Floor, lot.FloorsTotal, lot.Area, lot.Repairs, lot.Elevators, lot.Bathroom, lot.Refrigerator, lot.Dishwasher,
-		lot.GasStove, lot.ElectricStove, lot.VacuumCleaner, lot.Internet, lot.Animals, lot.Smoking,
+		lot.OwnerID, lot.Address, lot.Coordinates.X, lot.Coordinates.Y, lot.Coordinates.CellID, lot.TimeToMetroONFoot, lot.TimeToMetroByTransport,
+		lot.MetroStation, lot.Floor, lot.FloorsTotal, lot.Area, lot.Repairs, lot.PassElevator, lot.ServiceElevator, lot.Kitchen, lot.MicrowaveOven, lot.Bathroom, lot.Refrigerator, lot.Dishwasher,
+		lot.Stove, lot.VacuumCleaner, lot.Dryer, lot.Internet, lot.Animals, lot.Smoking, lot.Heating,
 	).Scan(&lot.ID)
 	if err != nil {
 		return err
@@ -272,13 +277,13 @@ func (l *LotRepository) Create(ctx context.Context, lot *models.Lot) error {
 
 	for i := 0; i < len(lot.Rooms); i++ {
 		err = tx.QueryRowContext(ctx, `
-				INSERT INTO rooms(flatid, maxresidents, description, currnumberofresidents, numofwindows,
-								  balcony, numoftables, numofchairs, tv, numofcupboards, area)
-				VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+				INSERT INTO rooms(flat_id, max_residents, curr_number_of_residents, windows,
+								  balcony, num_of_tables, num_of_chairs, tv, furniture, area)
+				VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 				RETURNING id
 		`,
-			lot.ID, lot.Rooms[i].MaxResidents, lot.Rooms[i].Description, lot.Rooms[i].CurrNumberOfResidents, lot.Rooms[i].NumOfWindows,
-			lot.Rooms[i].Balcony, lot.Rooms[i].NumOfTables, lot.Rooms[i].NumOfChairs, lot.Rooms[i].TV, lot.Rooms[i].NumOFCupboards, lot.Rooms[i].Area,
+			lot.ID, lot.Rooms[i].MaxResidents, lot.Rooms[i].CurrNumberOfResidents, lot.Rooms[i].Windows,
+			lot.Rooms[i].Balcony, lot.Rooms[i].NumOfTables, lot.Rooms[i].NumOfChairs, lot.Rooms[i].TV, lot.Rooms[i].Furniture, lot.Rooms[i].Area,
 		).Scan(&lot.Rooms[i].ID)
 		if err != nil {
 			return err
@@ -286,10 +291,10 @@ func (l *LotRepository) Create(ctx context.Context, lot *models.Lot) error {
 
 		for j := 0; j < len(lot.Rooms[i].LivingPlaces); j++ {
 			err := tx.QueryRowContext(ctx, `
-								INSERT INTO living_places(roomid, description, numofberths)
-								VALUES($1, $2, $3) RETURNING id 
+								INSERT INTO living_places(roomid, numofberths)
+								VALUES($1, $2) RETURNING id 
 					`,
-				lot.Rooms[i].ID, lot.Rooms[i].LivingPlaces[j].Description, lot.Rooms[i].LivingPlaces[j].NumOFBerth,
+				lot.Rooms[i].ID, lot.Rooms[i].LivingPlaces[j].NumOFBerth,
 			).Scan(&lot.Rooms[i].LivingPlaces[j].ID)
 			if err != nil {
 				return err

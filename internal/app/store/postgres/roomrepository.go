@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 
 	"github.com/Vysogota99/HousingSearch/internal/app/models"
 )
@@ -16,7 +17,7 @@ type RoomRepository struct {
 }
 
 // GetRooms ...
-func (r *RoomRepository) GetRooms(ctx context.Context, limit, offset int, filters map[string]string) (models.PaginationsRoom, error) {
+func (r *RoomRepository) GetRooms(ctx context.Context, limit, offset int, filters map[string]string, long, lat float64, radius int) (models.PaginationsRoom, error) {
 	result := models.PaginationsRoom{}
 	result.CurrentPage = offset
 
@@ -32,36 +33,26 @@ func (r *RoomRepository) GetRooms(ctx context.Context, limit, offset int, filter
 		return result, err
 	}
 
-	queryNumPages := `
-					SELECT CAST (count(f.id)/$1 + 1 AS integer) as num_pages 
-					FROM (
-						SELECT flatid, sum(maxresidents) as maxresidents, sum(currnumberofresidents) as currnumberofresidents
-						FROM rooms
-						GROUP BY flatid
-					) as r
-					INNER JOIN flats f ON f.id = r.flatid
-					WHERE f.isvisible = true
-	   `
-	if err := tx.QueryRowContext(ctx, queryNumPages, limit).Scan(&result.NumPages); err != nil {
-		return result, err
+	// Поиск комнаты в радиусе
+	condition := ""
+	if long != 0 || lat != 0 || radius != 0 {
+		condition = "WHERE f.cell_id IN (%s) AND "
+		cu := searchCellUnion(long, lat, radius, r.store.storageLevel)
+		cellIDS := make([]string, 0)
+		for _, item := range cu {
+			cellIDS = append(cellIDS, strconv.Itoa(int(item)))
+		}
+
+		cellIDSStr := strings.Join(cellIDS, ",")
+		condition = fmt.Sprintf(condition, cellIDSStr)
 	}
 
-	query := `SELECT r.price, r.deposit, r.flatid, r.area, r.id, r.maxresidents, r.currnumberofresidents, lp.avg_price, lp.avg_deposit,
-				f.address, f.floor, f.floortotal, f.metrostation, f.timetometrobytransport, f.area,
-				f.long, f.lat
-				FROM (
-					SELECT roomid, AVG(price) AS avg_price, AVG(deposit) AS avg_deposit
-					FROM living_places
-					GROUP BY roomid
-				) as lp
-				INNER JOIN rooms r ON r.id = lp.roomid
-				INNER JOIN flats f ON f.id = r.flatid 
-				%s
-				LIMIT $1 OFFSET $1 * ($2 - 1)
-	`
-	condition := ""
+	// Дополнительные фильтры
 	if filters != nil && len(filters) > 0 {
-		condition = "WHERE "
+		if condition == "" {
+			condition = "WHERE "
+		}
+
 		for key, value := range filters {
 			table := ""
 			if _, ok := models.MapRoom[key]; ok {
@@ -75,9 +66,42 @@ func (r *RoomRepository) GetRooms(ctx context.Context, limit, offset int, filter
 			}
 			condition += table + key + value + " AND "
 		}
-
-		condition = condition[0 : len(condition)-4]
 	}
+
+	if condition == "" {
+		condition = "WHERE f.is_visible = true AND f.is_constructor = false"
+	} else {
+		condition += "f.is_visible = true AND f.is_constructor = false"
+	}
+	// Конец фильтров
+
+	queryNumPages := `
+					SELECT CAST (count(f.id)/$1 + 1 AS integer) as num_pages 
+					FROM (
+						SELECT flat_id, sum(max_residents) as maxresidents, sum(curr_number_of_residents) as currnumberofresidents
+						FROM rooms
+						GROUP BY flat_id
+					) as r
+					INNER JOIN flats f ON f.id = r.flat_id %s
+	   `
+	queryNumPages = fmt.Sprintf(queryNumPages, condition)
+	if err := tx.QueryRowContext(ctx, queryNumPages, limit).Scan(&result.NumPages); err != nil {
+		return result, err
+	}
+
+	query := `SELECT r.price, r.deposit, r.flat_id, r.area, r.id, r.max_residents, r.curr_number_of_residents, lp.avg_price, lp.avg_deposit,
+				f.address, f.floor, f.floor_total, f.metro_station, f.time_to_metro_by_transport, f.area,
+				f.long, f.lat
+				FROM (
+					SELECT roomid, AVG(price) AS avg_price, AVG(deposit) AS avg_deposit
+					FROM living_places
+					GROUP BY roomid
+				) as lp
+				INNER JOIN rooms r ON r.id = lp.roomid
+				INNER JOIN flats f ON f.id = r.flat_id 
+				%s
+				LIMIT $1 OFFSET $1 * ($2 - 1)
+	`
 	query = fmt.Sprintf(query, condition)
 	log.Println(query)
 
@@ -100,6 +124,20 @@ func (r *RoomRepository) GetRooms(ctx context.Context, limit, offset int, filter
 	return result, nil
 }
 
+// GetRoomsAround ...
+func (r *RoomRepository) GetRoomsAround(ctx context.Context, filters map[string]string, long, lat float64, radius int) (models.PaginationsRoom, error) {
+	result := models.PaginationsRoom{}
+	cu := searchCellUnion(long, lat, radius, r.store.storageLevel)
+	cellIDS := make([]string, 0)
+	for _, item := range cu {
+		cellIDS = append(cellIDS, strconv.Itoa(int(item)))
+	}
+
+	cellIDSStr := strings.Join(cellIDS, ",")
+	log.Print(cellIDSStr)
+	return result, nil
+}
+
 // GetRoom ...
 func (r *RoomRepository) GetRoom(ctx context.Context, id int) (*models.Room, error) {
 	db, err := sql.Open("postgres", r.store.ConnString)
@@ -114,7 +152,13 @@ func (r *RoomRepository) GetRoom(ctx context.Context, id int) (*models.Room, err
 	if err != nil {
 		return nil, err
 	}
-	err = tx.QueryRow("SELECT * FROM rooms WHERE ID = $1", id).Scan(&room.ID, &room.FlatID, &room.MaxResidents, &room.Description, &room.Price, &room.Deposit, &room.CurrNumberOfResidents, &room.NumOfWindows, &room.Balcony, &room.NumOfTables, &room.NumOfChairs, &room.TV, &room.NumOFCupboards, &room.Area)
+	err = tx.QueryRow(`SELECT id, flat_id, max_residents, description, price, deposit,
+					   curr_number_of_residents, balcony, num_of_tables, num_of_chairs,
+					   tv, furniture, area, windows 
+					   FROM rooms WHERE ID = $1`, id).Scan(&room.ID, &room.FlatID, &room.MaxResidents,
+		&room.Description, &room.Price, &room.Deposit, &room.CurrNumberOfResidents,
+		&room.Balcony, &room.NumOfTables, &room.NumOfChairs, &room.TV,
+		&room.Furniture, &room.Area, &room.Windows)
 	if err != nil {
 		return nil, err
 	}
@@ -144,13 +188,13 @@ func (r *RoomRepository) Create(ctx context.Context, room *models.Room) error {
 	}
 
 	err = tx.QueryRowContext(ctx, `
-	INSERT INTO rooms(flatid, maxresidents, description, currnumberofresidents, numofwindows,
-					  balcony, numoftables, numofchairs, tv, numofcupboards, area)
+	INSERT INTO rooms(flat_id, max_residents, description, curr_number_of_residents, windows,
+					  balcony, num_of_tables, num_of_chairs, tv, furniture, area)
 	VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	RETURNING id
 	`,
-		room.FlatID, room.MaxResidents, room.Description, room.CurrNumberOfResidents, room.NumOfWindows,
-		room.Balcony, room.NumOfTables, room.NumOfChairs, room.TV, room.NumOFCupboards, room.Area,
+		room.FlatID, room.MaxResidents, room.Description, room.CurrNumberOfResidents, room.Windows,
+		room.Balcony, room.NumOfTables, room.NumOfChairs, room.TV, room.Furniture, room.Area,
 	).Scan(&room.ID)
 	if err != nil {
 		return err
