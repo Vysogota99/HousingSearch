@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/Vysogota99/HousingSearch/pkg/authService"
@@ -15,7 +14,6 @@ func (r *Router) TokenAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		jwt := c.Request.Header.Get("Authorization")
 		res, err := r.authClient.CheckAuthUser(context.Background(), &authService.CheckAuthRequest{Jwt: jwt})
-		log.Println(err)
 		if err != nil {
 			c.JSON(
 				http.StatusUnauthorized,
@@ -29,6 +27,7 @@ func (r *Router) TokenAuthMiddleware() gin.HandlerFunc {
 		}
 
 		c.Set("telephone_number", res.TelephoneNumber)
+		c.Set("user_id", res.UserID)
 		c.Next()
 	}
 }

@@ -43,10 +43,12 @@ func (r *Router) Setup() *gin.Engine {
 
 		api.POST("/lot", r.HeadersMiddleware(), r.PostLotHandler)
 		api.GET("/lot", r.HeadersMiddleware(), r.GetLotsHandler)
-		api.GET("/lot/:lotid", r.HeadersMiddleware(), r.GetLotHandler)
+		api.GET("/lot/id/:lotid", r.HeadersMiddleware(), r.GetLotHandler)
+		api.GET("/lot/owner/ads", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.GetLotsOwnerHandler)
 
 		api.GET("/rooms", r.HeadersMiddleware(), r.GetRoomsHandler)
-		api.GET("/rooms/:roomid", r.HeadersMiddleware(), r.GetRoomHandler)
+		api.GET("/rooms/id/:roomid", r.HeadersMiddleware(), r.GetRoomHandler)
+		api.GET("/rooms/owner/ads", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.GetRoomsOwnerHandler)
 		api.POST("/rooms", r.HeadersMiddleware(), r.PostRoomHandler)
 		api.DELETE("/rooms/room/:roomid", r.HeadersMiddleware(), r.DeleteRoomHandler)
 		api.PATCH("/rooms/room/:roomid", r.HeadersMiddleware(), r.UpdateRoomHandler)

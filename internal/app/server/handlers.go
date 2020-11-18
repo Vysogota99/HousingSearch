@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -21,6 +22,7 @@ const (
 	ALREADY_EXISTS        = "Невозможно создать запись, она уже существует"
 	LOT_NOT_FOUND         = "Квартира или комната не найдена"
 	BAD_ORDERBY_PARAMS    = "Параметры для сортировки установлены неправильно"
+	UNAUTH                = "Пользователь не авторизован"
 )
 
 // TestAPIHandler - handle request from outside to check accessibility of the server
@@ -242,7 +244,7 @@ func (r *Router) GetLotsHandler(c *gin.Context) {
 		return
 	}
 
-	res, err := r.store.Lot().GetFlats(context.Background(), limitInt, offsetInt, nil, orderBy, longFl64, latFl64, radiusInt)
+	res, err := r.store.Lot().GetFlats(context.Background(), limitInt, offsetInt, nil, false, orderBy, longFl64, latFl64, radiusInt)
 	if err != nil {
 		respond(c, http.StatusOK, nil, err.Error())
 		return
@@ -307,8 +309,8 @@ func (r *Router) GetRoomsHandler(c *gin.Context) {
 		return
 	}
 
-	fieldsToFilter := mapOfParams(c, []string{"maxresidents", "currnumberofresidents", "numofwindows", "balcony", "numoftables", "numofchairs", "tv", "numofcupboards", "area"})
-	rooms, err := r.store.Room().GetRooms(context.Background(), limitInt, offsetInt, fieldsToFilter, roomLongFl64, roomLatFl64, roomRadiusInt)
+	fieldsToFilter := mapOfParams(c, models.MapRoom)
+	rooms, err := r.store.Room().GetRooms(context.Background(), limitInt, offsetInt, fieldsToFilter, false, roomLongFl64, roomLatFl64, roomRadiusInt)
 	switch {
 	case err == sql.ErrNoRows:
 		respond(c, http.StatusNotFound, rooms, LOT_NOT_FOUND)
@@ -459,6 +461,82 @@ func (r *Router) UpdateLivingPlaceHandler(c *gin.Context) {
 	respond(c, http.StatusOK, nil, "")
 }
 
+// GetRoomsOwnerHandler - список комнат, выставленных конкретным пользователем(арендодателем)
+func (r *Router) GetRoomsOwnerHandler(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		respond(c, http.StatusUnauthorized, nil, UNAUTH)
+		return
+	}
+
+	limit := c.DefaultQuery("limit", "1000")
+	offset := c.DefaultQuery("offset", "1")
+
+	limitInt, err := strconv.Atoi(limit)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+	offsetInt, err := strconv.Atoi(offset)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+
+	rooms, err := r.store.Room().GetRooms(context.Background(), limitInt, offsetInt, map[string]string{
+		"owner_id": fmt.Sprintf("=%d", userID.(int64)),
+	}, false, 0, 0, 0)
+
+	switch {
+	case err == sql.ErrNoRows:
+		respond(c, http.StatusNotFound, rooms, LOT_NOT_FOUND)
+		return
+	case err != nil:
+		respond(c, http.StatusInternalServerError, nil, err.Error())
+		return
+	}
+
+	respond(c, http.StatusOK, rooms, "")
+}
+
+// GetLotsOwnerHandler - список квартир, выставленных конкретным пользователем(арендодателем)
+func (r *Router) GetLotsOwnerHandler(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		respond(c, http.StatusUnauthorized, nil, UNAUTH)
+		return
+	}
+
+	limit := c.DefaultQuery("limit", "1000")
+	offset := c.DefaultQuery("offset", "1")
+
+	limitInt, err := strconv.Atoi(limit)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+	offsetInt, err := strconv.Atoi(offset)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+
+	rooms, err := r.store.Lot().GetFlats(context.Background(), limitInt, offsetInt, map[string]string{
+		"owner_id": fmt.Sprintf("=%d", userID.(int64)),
+	}, false, nil, 0, 0, 0)
+
+	switch {
+	case err == sql.ErrNoRows:
+		respond(c, http.StatusNotFound, rooms, LOT_NOT_FOUND)
+		return
+	case err != nil:
+		respond(c, http.StatusInternalServerError, nil, err.Error())
+		return
+	}
+
+	respond(c, http.StatusOK, rooms, "")
+}
+
 //====================================HELPERS================================================================
 
 func respond(c *gin.Context, code int, result interface{}, err string) {
@@ -471,13 +549,14 @@ func respond(c *gin.Context, code int, result interface{}, err string) {
 	)
 }
 
-func mapOfParams(c *gin.Context, fields []string) map[string]string {
+func mapOfParams(c *gin.Context, fields map[string]int8) map[string]string {
 	result := make(map[string]string)
-	for _, field := range fields {
-		if value := c.Query(field); value != "" {
-			result[field] = value
+	for key := range fields {
+		if value := c.Query(key); value != "" {
+			result[key] = value
 		}
 	}
 
+	log.Println(result)
 	return result
 }

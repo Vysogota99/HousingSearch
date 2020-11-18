@@ -50,6 +50,7 @@ type RoomExtended struct {
 	FloorsTotal            int           `json:"floor_total,omitempty"`
 	MetroStation           string        `json:"metro,omitempty"`
 	TimeToMetroByTransport int           `json:"ttmetro_transport,omitempty"`
+	TimeToMetroByFoot      int           `json:"ttmetro_foot,omitempty"`
 	FlatArea               int           `json:"flat_area,omitempty"`
 	Long                   float64       `json:"long,omitempty"`
 	Lat                    float64       `json:"lat,omitempty"`
@@ -59,15 +60,17 @@ type RoomExtended struct {
 
 // MapRoom - ...
 var MapRoom = map[string]int8{
-	"area":                  1,
-	"maxresidents":          1,
-	"currnumberofresidents": 1,
-	"numofwindows":          1,
-	"balcony":               1,
-	"numoftables":           1,
-	"numofchairs":           1,
-	"tv":                    1,
-	"numofcupboards":        1,
-	"deposit":               1,
-	"price":                 1,
+	"area min":                 1,
+	"area max":                 1,
+	"max_residents":            1,
+	"curr_number_of_residents": 1,
+	"windows":                  1,
+	"balcony":                  1,
+	"num_of_tables":            1,
+	"num_of_chairs":            1,
+	"tv":                       1,
+	"furniture":                1,
+	"deposit":                  1,
+	"price max":                1,
+	"price min":                1,
 }

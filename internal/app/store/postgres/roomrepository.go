@@ -17,7 +17,7 @@ type RoomRepository struct {
 }
 
 // GetRooms ...
-func (r *RoomRepository) GetRooms(ctx context.Context, limit, offset int, filters map[string]string, long, lat float64, radius int) (models.PaginationsRoom, error) {
+func (r *RoomRepository) GetRooms(ctx context.Context, limit, offset int, filters map[string]string, isConstruct bool, long, lat float64, radius int) (models.PaginationsRoom, error) {
 	result := models.PaginationsRoom{}
 	result.CurrentPage = offset
 
@@ -48,6 +48,7 @@ func (r *RoomRepository) GetRooms(ctx context.Context, limit, offset int, filter
 	}
 
 	// Дополнительные фильтры
+	roomFields := make([]string, 0)
 	if filters != nil && len(filters) > 0 {
 		if condition == "" {
 			condition = "WHERE "
@@ -55,8 +56,10 @@ func (r *RoomRepository) GetRooms(ctx context.Context, limit, offset int, filter
 
 		for key, value := range filters {
 			table := ""
+			field := strings.Split(key, " ")
 			if _, ok := models.MapRoom[key]; ok {
 				table = "r."
+				roomFields = append(roomFields, field[0])
 			}
 			if _, ok := models.MapFlat[key]; ok {
 				table = "f."
@@ -64,33 +67,32 @@ func (r *RoomRepository) GetRooms(ctx context.Context, limit, offset int, filter
 			if _, ok := models.MapLp[key]; ok {
 				table = "lp."
 			}
-			condition += table + key + value + " AND "
+			condition += table + field[0] + value + " AND "
 		}
 	}
 
 	if condition == "" {
-		condition = "WHERE f.is_visible = true AND f.is_constructor = false"
+		condition = fmt.Sprintf("WHERE f.is_visible = true AND f.is_constructor = %t", isConstruct)
 	} else {
-		condition += "f.is_visible = true AND f.is_constructor = false"
+		condition += fmt.Sprintf("f.is_visible = true AND f.is_constructor = %t", isConstruct)
 	}
+
+	// roomFieldsStr := strings.Join(roomFields, ",")
 	// Конец фильтров
 
 	queryNumPages := `
-					SELECT CAST (count(f.id)/$1 + 1 AS integer) as num_pages 
-					FROM (
-						SELECT flat_id, sum(max_residents) as maxresidents, sum(curr_number_of_residents) as currnumberofresidents
-						FROM rooms
-						GROUP BY flat_id
-					) as r
+					SELECT CAST (count(r.id)/ $1 + 1 AS integer) as num_pages
+					FROM rooms AS r
 					INNER JOIN flats f ON f.id = r.flat_id %s
 	   `
 	queryNumPages = fmt.Sprintf(queryNumPages, condition)
+	log.Println(queryNumPages)
 	if err := tx.QueryRowContext(ctx, queryNumPages, limit).Scan(&result.NumPages); err != nil {
 		return result, err
 	}
 
 	query := `SELECT r.price, r.deposit, r.flat_id, r.area, r.id, r.max_residents, r.curr_number_of_residents, lp.avg_price, lp.avg_deposit,
-				f.address, f.floor, f.floor_total, f.metro_station, f.time_to_metro_by_transport, f.area,
+				f.address, f.floor, f.floor_total, f.metro_station, f.time_to_metro_by_transport, f.time_to_metro_on_foot, f.area,
 				f.long, f.lat
 				FROM (
 					SELECT roomid, AVG(price) AS avg_price, AVG(deposit) AS avg_deposit
@@ -106,12 +108,15 @@ func (r *RoomRepository) GetRooms(ctx context.Context, limit, offset int, filter
 	log.Println(query)
 
 	rows, err := tx.QueryContext(ctx, query, limit, offset)
+	if err != nil {
+		return result, err
+	}
 
 	rooms := []models.RoomExtended{}
 	for rows.Next() {
 		room := models.RoomExtended{}
 		if err := rows.Scan(&room.Price, &room.Deposit, &room.FlatID, &room.Area, &room.ID, &room.MaxResidents, &room.CurrNumberOfResidents, &room.AvgPrice, &room.AvgDeposit,
-			&room.Address, &room.Floor, &room.FloorsTotal, &room.MetroStation, &room.TimeToMetroByTransport, &room.FlatArea, &room.Long, &room.Lat,
+			&room.Address, &room.Floor, &room.FloorsTotal, &room.MetroStation, &room.TimeToMetroByTransport, &room.TimeToMetroByFoot, &room.FlatArea, &room.Long, &room.Lat,
 		); err != nil {
 			return result, err
 		}

@@ -11,9 +11,9 @@ import (
 )
 
 // CreateToken ...
-func CreateToken(steamID string) (*TokenDetails, error) {
+func CreateToken(telephoneNumer string, id int64) (*TokenDetails, error) {
 	tokenDet := &TokenDetails{}
-	tokenDet.AccTExpires = time.Now().Add(time.Minute * 15).Unix()
+	tokenDet.AccTExpires = time.Now().Add(time.Minute * 60).Unix()
 	tokenDet.AccessUUID = uuid.NewV4().String()
 
 	tokenDet.RefTExpires = time.Now().Add(time.Hour * 24 * 7).Unix()
@@ -24,7 +24,8 @@ func CreateToken(steamID string) (*TokenDetails, error) {
 	atClaims := jwt.MapClaims{}
 	atClaims["authorized"] = true
 	atClaims["access_uuid"] = tokenDet.AccessUUID
-	atClaims["telephone_number"] = steamID
+	atClaims["telephone_number"] = telephoneNumer
+	atClaims["user_id"] = id
 	atClaims["exp"] = tokenDet.AccTExpires
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	tokenDet.AccessToken, err = accessToken.SignedString([]byte(os.Getenv("ACCESS_SECRET")))
@@ -35,7 +36,8 @@ func CreateToken(steamID string) (*TokenDetails, error) {
 	// Creating refresh token
 	rtClaims := jwt.MapClaims{}
 	rtClaims["refresh_uuid"] = tokenDet.RefreshUUID
-	rtClaims["telephone_number"] = steamID
+	rtClaims["telephone_number"] = telephoneNumer
+	rtClaims["user_id"] = id
 	rtClaims["exp"] = tokenDet.RefTExpires
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
 	tokenDet.RefreshToken, err = refreshToken.SignedString([]byte(os.Getenv("REFRESH_SECRET")))
@@ -88,19 +90,26 @@ func ExtractTokenMetadata(tokenString string) (*AccessDetails, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if ok && token.Valid {
 		accessUUID, ok := claims["access_uuid"].(string)
 		if !ok {
-			return nil, err
+			return nil, fmt.Errorf("No access_uuid in jwt token")
 		}
-		field, ok := claims["telephone_number"].(string)
+		telephoneNumber, ok := claims["telephone_number"].(string)
 		if !ok {
-			return nil, err
+			return nil, fmt.Errorf("No telephone_number in jwt token")
 		}
+		userID, ok := claims["user_id"]
+		if !ok {
+			return nil, fmt.Errorf("No user_id in jwt token")
+		}
+		userIDInt64 := int64(userID.(float64))
 		return &AccessDetails{
-			AccessUUID: accessUUID,
-			Field:      field,
+			AccessUUID:      accessUUID,
+			TelephoneNumber: telephoneNumber,
+			UserID:          userIDInt64,
 		}, nil
 	}
 	return nil, err

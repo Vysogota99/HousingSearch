@@ -12,6 +12,7 @@ type TokenDetails struct {
 
 // AccessDetails ...
 type AccessDetails struct {
-	AccessUUID string
-	Field      string
+	AccessUUID      string
+	UserID          int64
+	TelephoneNumber string
 }

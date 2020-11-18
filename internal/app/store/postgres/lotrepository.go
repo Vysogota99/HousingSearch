@@ -24,7 +24,7 @@ const (
 )
 
 // GetFlats - постранично выводит список квартир(объявлений)
-func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, filters map[string]string, orderBy []string, long, lat float64, radius int) (models.Paginations, error) {
+func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, filters map[string]string, isConstruct bool, orderBy []string, long, lat float64, radius int) (models.Paginations, error) {
 	db, err := sql.Open("postgres", l.store.ConnString)
 	result := models.Paginations{}
 	result.CurrentPage = offset
@@ -65,9 +65,9 @@ func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, filters
 	}
 
 	if condition == "" {
-		condition = "WHERE is_visible = true AND is_constructor = false"
+		condition = fmt.Sprintf("WHERE is_visible = true AND is_constructor = %t", isConstruct)
 	} else {
-		condition += "is_visible = true AND is_constructor = false"
+		condition += fmt.Sprintf("is_visible = true AND is_constructor = %t", isConstruct)
 	}
 	// Конец фильтров
 
@@ -138,12 +138,6 @@ func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, filters
 		result.Data[index].Rooms = dictRooms[lot.ID]
 	}
 	return result, nil
-}
-
-// GetFlatsFiltered - выводит список всех квартир(объявлений) с применением фильтров и сортировок
-func (l *LotRepository) GetFlatsFiltered(ctx context.Context, limit, offset int, params ...map[string]string) ([]models.Lot, error) {
-
-	return nil, nil
 }
 
 // GetFlatAd - выводит конкретную квартиру(объявление)

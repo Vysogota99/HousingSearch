@@ -179,6 +179,7 @@ var TestLot = Lot{
 
 // MapFlat - ...
 var MapFlat = map[string]int8{
+	"owner_id":               1,
 	"floor":                  1,
 	"floortotal":             1,
 	"metrostation":           1,

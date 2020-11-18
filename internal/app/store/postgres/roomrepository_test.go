@@ -24,11 +24,24 @@ func TestCreateRoom(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestGetRooms(t *testing.T) {
+	var store store.Store = New(connString, STORAGE_LEVEL)
+	limit := 100
+	offset := 1
+	filters := map[string]string{
+		"area max": "<=40",
+		"area min": ">5",
+		"balcony":  "=true",
+	}
+
+	_, err := store.Room().GetRooms(context.Background(), limit, offset, filters, false, 0, 0, 0)
+	assert.NoError(t, err)
+}
 func TestGetRoomsForMap(t *testing.T) {
 	var store store.Store = New(connString, STORAGE_LEVEL)
 	limit := 100
 	offset := 1
-	res, err := store.Room().GetRooms(context.Background(), limit, offset, nil, 0, 0, 0)
+	res, err := store.Room().GetRooms(context.Background(), limit, offset, nil, false, 0, 0, 0)
 	assert.NoError(t, err)
 	assert.NotNil(t, res)
 }

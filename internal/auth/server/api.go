@@ -16,7 +16,7 @@ func (s *GRPCServer) SignupUser(ctx context.Context, req *authService.SignUPUser
 		return nil, err
 	}
 
-	tokens, err := jwt.CreateToken(req.User.TelephoneNumber)
+	tokens, err := jwt.CreateToken(req.User.TelephoneNumber, req.User.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,8 @@ func (s *GRPCServer) CheckAuthUser(ctx context.Context, req *authService.CheckAu
 	}
 
 	return &authService.CheckAuthResponse{
-		TelephoneNumber: jwtData.Field,
+		TelephoneNumber: jwtData.TelephoneNumber,
+		UserID:          jwtData.UserID,
 	}, nil
 }
 
@@ -82,7 +83,7 @@ func (s *GRPCServer) LoginUser(ctx context.Context, req *authService.LoginUserRe
 	}
 
 	user.Password = ""
-	tokens, err := jwt.CreateToken(user.TelephoneNumber)
+	tokens, err := jwt.CreateToken(user.TelephoneNumber, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -93,6 +94,6 @@ func (s *GRPCServer) LoginUser(ctx context.Context, req *authService.LoginUserRe
 	return &authService.SignUPUserResponse{
 		AccessToken:  tokens.AccessToken,
 		RefreshToken: tokens.RefreshToken,
-		User: user,
+		User:         user,
 	}, nil
 }
