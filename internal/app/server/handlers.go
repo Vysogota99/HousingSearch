@@ -537,6 +537,10 @@ func (r *Router) GetLotsOwnerHandler(c *gin.Context) {
 	respond(c, http.StatusOK, rooms, "")
 }
 
+func (r *Router) OptionsHandler(c *gin.Context) {
+	c.Status(204)
+}
+
 //====================================HELPERS================================================================
 
 func respond(c *gin.Context, code int, result interface{}, err string) {

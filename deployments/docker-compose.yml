@@ -46,7 +46,7 @@ services:
     ports: 
       - "8080:8080"
     volumes:
-      - "../web/school-front:/app"
+      - "../web/housing-search:/app"
 
   
   

@@ -40,6 +40,10 @@ func (r *Router) HeadersMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Add("Content-Type", "application/json")
 		c.Writer.Header().Add("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Add("Access-Control-Allow-Methods", "*")
+		c.Writer.Header().Add("Access-Control-Request-Headers", "*")
+		c.Writer.Header().Add("Access-Control-Allow-Headers", "*")
+
 		c.Next()
 	}
 }

@@ -39,6 +39,7 @@ func (r *Router) Setup() *gin.Engine {
 
 		api.POST("/signup", r.HeadersMiddleware(), r.SignUPHandler)
 		api.POST("/logout", r.HeadersMiddleware(), r.LogoutHandler)
+		api.OPTIONS("/logout", r.HeadersMiddleware(), r.OptionsHandler)
 		api.POST("/login", r.HeadersMiddleware(), r.LogInHandler)
 
 		api.POST("/lot", r.HeadersMiddleware(), r.PostLotHandler)
