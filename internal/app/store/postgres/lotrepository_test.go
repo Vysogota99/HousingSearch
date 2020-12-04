@@ -61,7 +61,7 @@ func TestGetLotsFiltered(t *testing.T) {
 
 func TestGetFlatAd(t *testing.T) {
 	var store store.Store = New(connString, STORAGE_LEVEL)
-	lot, err := store.Lot().GetFlatAd(context.Background(), 1)
+	lot, err := store.Lot().GetFlatAd(context.Background(), 1, false)
 	assert.NoError(t, err)
 	assert.NotNil(t, lot)
 }

@@ -49,7 +49,7 @@ func TestGetLotHandler(t *testing.T) {
 	ts := httptest.NewServer(router.Setup())
 	defer ts.Close()
 
-	_, err := http.Get(fmt.Sprintf("%s/api/lot/1", ts.URL))
+	_, err := http.Get(fmt.Sprintf("%s/api/lot/id/1/true", ts.URL))
 	assert.NoError(t, err)
 }
 

@@ -6,9 +6,11 @@ import (
 
 // Config ...
 type Config struct {
-	AuthServicePort string
-	DbConString     string
-	RedisDSN        string
+	AuthServicePort   string
+	DbConString       string
+	RedisDSN          string
+	JWTAccessExpTime  string
+	JWTRefreshExpTime string
 }
 
 // NewConfig - helper to init config
@@ -29,9 +31,21 @@ func NewConfig() (*Config, error) {
 		panic("No REDIS_DSN in .env")
 	}
 
+	jwtAccessExpTime, exists := os.LookupEnv("JWT_ACCESS_EXPIRE_TIME")
+	if !exists {
+		panic("No JWT_ACCESS_EXPIRE_TIME in .env")
+	}
+
+	jwtRefreshExpTime, exists := os.LookupEnv("JWT_ACCESS_REFRESH_TIME")
+	if !exists {
+		panic("No JWT_ACCESS_REFRESH_TIME in .env")
+	}
+
 	return &Config{
-		AuthServicePort: authServicePort,
-		DbConString:     dbConString,
-		RedisDSN:        redisDSN,
+		AuthServicePort:   authServicePort,
+		DbConString:       dbConString,
+		RedisDSN:          redisDSN,
+		JWTAccessExpTime:  jwtAccessExpTime,
+		JWTRefreshExpTime: jwtRefreshExpTime,
 	}, nil
 }

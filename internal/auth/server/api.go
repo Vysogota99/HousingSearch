@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/Vysogota99/HousingSearch/internal/auth/jwt"
 	"github.com/Vysogota99/HousingSearch/internal/auth/store/postgresstore"
@@ -16,7 +17,17 @@ func (s *GRPCServer) SignupUser(ctx context.Context, req *authService.SignUPUser
 		return nil, err
 	}
 
-	tokens, err := jwt.CreateToken(req.User.TelephoneNumber, req.User.ID)
+	accTime, err := strconv.ParseInt(s.Conf.JWTAccessExpTime, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	refTime, err := strconv.ParseInt(s.Conf.JWTRefreshExpTime, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	tokens, err := jwt.CreateToken(req.User.TelephoneNumber, req.User.ID, accTime, refTime)
 	if err != nil {
 		return nil, err
 	}
@@ -37,6 +48,12 @@ func (s *GRPCServer) SignupUser(ctx context.Context, req *authService.SignUPUser
 func (s *GRPCServer) LogOutUser(ctx context.Context, req *authService.LogOutRequest) (*authService.LogOutResponse, error) {
 	au, err := jwt.ExtractTokenMetadata(req.Jwt)
 	if err != nil {
+		if err.Error() == "Token is expired" {
+			return &authService.LogOutResponse{
+				Message: "Deleted",
+			}, nil
+		}
+
 		return nil, fmt.Errorf("Невалидный jwt. %w", err)
 	}
 
@@ -83,7 +100,18 @@ func (s *GRPCServer) LoginUser(ctx context.Context, req *authService.LoginUserRe
 	}
 
 	user.Password = ""
-	tokens, err := jwt.CreateToken(user.TelephoneNumber, user.ID)
+
+	accTime, err := strconv.ParseInt(s.Conf.JWTAccessExpTime, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	refTime, err := strconv.ParseInt(s.Conf.JWTRefreshExpTime, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	tokens, err := jwt.CreateToken(user.TelephoneNumber, user.ID, accTime, refTime)
 	if err != nil {
 		return nil, err
 	}

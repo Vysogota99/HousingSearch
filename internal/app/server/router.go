@@ -39,13 +39,13 @@ func (r *Router) Setup() *gin.Engine {
 
 		api.POST("/signup", r.HeadersMiddleware(), r.SignUPHandler)
 		api.POST("/logout", r.HeadersMiddleware(), r.LogoutHandler)
-		api.OPTIONS("/logout", r.HeadersMiddleware(), r.OptionsHandler)
 		api.POST("/login", r.HeadersMiddleware(), r.LogInHandler)
 
 		api.POST("/lot", r.HeadersMiddleware(), r.PostLotHandler)
 		api.GET("/lot", r.HeadersMiddleware(), r.GetLotsHandler)
-		api.GET("/lot/id/:lotid", r.HeadersMiddleware(), r.GetLotHandler)
+		api.GET("/lot/id/:lotid/:isconstructot", r.HeadersMiddleware(), r.GetLotHandler)
 		api.GET("/lot/owner/ads", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.GetLotsOwnerHandler)
+		api.GET("/lot/owner/construct", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.GetConstructOwnerHandler)
 
 		api.GET("/rooms", r.HeadersMiddleware(), r.GetRoomsHandler)
 		api.GET("/rooms/id/:roomid", r.HeadersMiddleware(), r.GetRoomHandler)
@@ -55,6 +55,23 @@ func (r *Router) Setup() *gin.Engine {
 		api.PATCH("/rooms/room/:roomid", r.HeadersMiddleware(), r.UpdateRoomHandler)
 		api.DELETE("/rooms/living_place/:lpid", r.HeadersMiddleware(), r.DeleteLivingPlaceHandler)
 		api.PATCH("/rooms/living_place/:lpid", r.HeadersMiddleware(), r.UpdateLivingPlaceHandler)
+
+		
+		// api.OPTIONS("/signup", r.HeadersMiddleware(), r.OptionsHandler)
+		api.OPTIONS("/logout", r.HeadersMiddleware(), r.OptionsHandler)
+		// api.OPTIONS("/login", r.HeadersMiddleware(), r.LogInHandler)
+
+		// api.OPTIONS("/lot", r.HeadersMiddleware(), r.OptionsHandler)
+		// api.OPTIONS("/lot/id/:lotid/:isconstructot", r.HeadersMiddleware(), r.OptionsHandler)
+		// api.OPTIONS("/lot/owner/ads", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.OptionsHandler)
+		// api.OPTIONS("/lot/owner/construct", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.OptionsHandler)
+
+		// api.OPTIONS("/rooms", r.HeadersMiddleware(), r.OptionsHandler)
+		// api.OPTIONS("/rooms/id/:roomid", r.HeadersMiddleware(), r.OptionsHandler)
+		// api.OPTIONS("/rooms/owner/ads", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.OptionsHandler)
+		// api.OPTIONS("/rooms/room/:roomid", r.HeadersMiddleware(), r.OptionsHandler)
+		// api.OPTIONS("/rooms/living_place/:lpid", r.HeadersMiddleware(), r.OptionsHandler)
+
 	}
 
 	return r.router

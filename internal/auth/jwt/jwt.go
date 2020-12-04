@@ -11,12 +11,12 @@ import (
 )
 
 // CreateToken ...
-func CreateToken(telephoneNumer string, id int64) (*TokenDetails, error) {
+func CreateToken(telephoneNumer string, id int64, expAccessTime, expRefreshTime int64) (*TokenDetails, error) {
 	tokenDet := &TokenDetails{}
-	tokenDet.AccTExpires = time.Now().Add(time.Minute * 60).Unix()
+	tokenDet.AccTExpires = time.Now().Add(time.Minute * time.Duration(expAccessTime)).Unix()
 	tokenDet.AccessUUID = uuid.NewV4().String()
 
-	tokenDet.RefTExpires = time.Now().Add(time.Hour * 24 * 7).Unix()
+	tokenDet.RefTExpires = time.Now().Add(time.Hour * 24 * time.Duration(expRefreshTime)).Unix()
 	tokenDet.RefreshUUID = uuid.NewV4().String()
 
 	var err error

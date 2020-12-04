@@ -16,7 +16,7 @@ type Store interface {
 // квартир, комнат, спальных мест с применением различных фильтров
 type LotRepository interface {
 	GetFlats(ctx context.Context, limit, offset int, filters map[string]string, isConstruct bool, orderBy []string, long, lat float64, radius int) (models.Paginations, error)
-	GetFlatAd(context.Context, int) (*models.Lot, error)
+	GetFlatAd(context.Context, int, bool) (*models.Lot, error)
 	Create(context.Context, *models.Lot) error
 }
 

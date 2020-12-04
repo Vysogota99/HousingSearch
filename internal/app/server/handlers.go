@@ -262,7 +262,14 @@ func (r *Router) GetLotHandler(c *gin.Context) {
 		return
 	}
 
-	res, err := r.store.Lot().GetFlatAd(context.Background(), lotIDInt)
+	isConstructor := c.Param("isconstructot")
+	isConstructorBool, err := strconv.ParseBool(isConstructor)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+
+	res, err := r.store.Lot().GetFlatAd(context.Background(), lotIDInt, isConstructorBool)
 	switch {
 	case err == sql.ErrNoRows:
 		respond(c, http.StatusNotFound, res, LOT_NOT_FOUND)
@@ -524,6 +531,44 @@ func (r *Router) GetLotsOwnerHandler(c *gin.Context) {
 	rooms, err := r.store.Lot().GetFlats(context.Background(), limitInt, offsetInt, map[string]string{
 		"owner_id": fmt.Sprintf("=%d", userID.(int64)),
 	}, false, nil, 0, 0, 0)
+
+	switch {
+	case err == sql.ErrNoRows:
+		respond(c, http.StatusNotFound, rooms, LOT_NOT_FOUND)
+		return
+	case err != nil:
+		respond(c, http.StatusInternalServerError, nil, err.Error())
+		return
+	}
+
+	respond(c, http.StatusOK, rooms, "")
+}
+
+// GetConstructOwnerHandler - список конструкторов квартир, выставленных конкретным пользователем(арендодателем)
+func (r *Router) GetConstructOwnerHandler(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		respond(c, http.StatusUnauthorized, nil, UNAUTH)
+		return
+	}
+
+	limit := c.DefaultQuery("limit", "1000")
+	offset := c.DefaultQuery("offset", "1")
+
+	limitInt, err := strconv.Atoi(limit)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+	offsetInt, err := strconv.Atoi(offset)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+
+	rooms, err := r.store.Lot().GetFlats(context.Background(), limitInt, offsetInt, map[string]string{
+		"owner_id": fmt.Sprintf("=%d", userID.(int64)),
+	}, true, nil, 0, 0, 0)
 
 	switch {
 	case err == sql.ErrNoRows:

@@ -141,7 +141,7 @@ func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, filters
 }
 
 // GetFlatAd - выводит конкретную квартиру(объявление)
-func (l *LotRepository) GetFlatAd(ctx context.Context, id int) (*models.Lot, error) {
+func (l *LotRepository) GetFlatAd(ctx context.Context, id int, isConstructor bool) (*models.Lot, error) {
 	db, err := sql.Open("postgres", l.store.ConnString)
 	defer db.Close()
 	if err != nil {
@@ -162,7 +162,9 @@ func (l *LotRepository) GetFlatAd(ctx context.Context, id int) (*models.Lot, err
 				  time_to_metro_by_transport, metro_station, floor, floor_total, area, repair, pass_elevator,
 				  service_elevator, kitchen, microwave_oven, bathroom, refrigerator, dishwasher, stove, vacuum_cleaner,
 				  dryer, internet, animals, smoking, heating, is_visible, is_constructor, created_at, updated_at
-				  FROM flats WHERE id = $1 AND is_visible = true AND is_constructor = false`
+				  FROM flats WHERE id = $1 AND is_visible = true AND is_constructor = %t`
+
+	queryFlat = fmt.Sprintf(queryFlat, isConstructor)
 	err = tx.QueryRowContext(ctx, queryFlat, id).Scan(&lot.ID, &lot.OwnerID, &lot.Address, &lot.Coordinates.X, &lot.Coordinates.Y, &lot.Price, &lot.Deposit, &lot.Description,
 		&lot.TimeToMetroONFoot, &lot.TimeToMetroByTransport, &lot.MetroStation, &lot.Floor, &lot.FloorsTotal,
 		&lot.Area, &lot.Repairs, &lot.PassElevator, &lot.ServiceElevator, &lot.Kitchen, &lot.MicrowaveOven, &lot.Bathroom, &lot.Refrigerator, &lot.Dishwasher, &lot.Stove,
@@ -197,11 +199,12 @@ func (l *LotRepository) GetFlatAd(ctx context.Context, id int) (*models.Lot, err
 	}
 
 	queryLivingPlaces := "SELECT id, roomid, residentid, price, description, numofberths, deposit FROM living_places WHERE roomid IN ($1"
-	for i := 2; i <= cap(roomsID); i++ {
+	for i := 2; i <= len(roomsID); i++ {
 		queryLivingPlaces += ", $" + strconv.Itoa(i)
 	}
 	queryLivingPlaces += ")"
 
+	log.Println(queryLivingPlaces)
 	rowsLivingPlaces, err := tx.QueryContext(ctx, queryLivingPlaces, roomsID...)
 	defer rowsLivingPlaces.Close()
 	if err != nil {
@@ -223,7 +226,7 @@ func (l *LotRepository) GetFlatAd(ctx context.Context, id int) (*models.Lot, err
 		dictWithLPlaces[strconv.Itoa(lp.RoomID)] = append(dictWithLPlaces[strconv.Itoa(lp.RoomID)], lp)
 	}
 
-	for i := 0; i < cap(rooms); i++ {
+	for i := 0; i < len(rooms); i++ {
 		rooms[i].LivingPlaces = dictWithLPlaces[strconv.Itoa(rooms[i].ID)]
 	}
 
