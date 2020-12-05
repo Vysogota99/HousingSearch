@@ -56,21 +56,20 @@ func (r *Router) Setup() *gin.Engine {
 		api.DELETE("/rooms/living_place/:lpid", r.HeadersMiddleware(), r.DeleteLivingPlaceHandler)
 		api.PATCH("/rooms/living_place/:lpid", r.HeadersMiddleware(), r.UpdateLivingPlaceHandler)
 
-		
-		// api.OPTIONS("/signup", r.HeadersMiddleware(), r.OptionsHandler)
+		api.OPTIONS("/signup", r.HeadersMiddleware(), r.OptionsHandler)
 		api.OPTIONS("/logout", r.HeadersMiddleware(), r.OptionsHandler)
-		// api.OPTIONS("/login", r.HeadersMiddleware(), r.LogInHandler)
+		api.OPTIONS("/login", r.HeadersMiddleware(), r.LogInHandler)
 
-		// api.OPTIONS("/lot", r.HeadersMiddleware(), r.OptionsHandler)
-		// api.OPTIONS("/lot/id/:lotid/:isconstructot", r.HeadersMiddleware(), r.OptionsHandler)
-		// api.OPTIONS("/lot/owner/ads", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.OptionsHandler)
-		// api.OPTIONS("/lot/owner/construct", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.OptionsHandler)
+		api.OPTIONS("/lot", r.HeadersMiddleware(), r.OptionsHandler)
+		api.OPTIONS("/lot/id/:lotid/:isconstructot", r.HeadersMiddleware(), r.OptionsHandler)
+		api.OPTIONS("/lot/owner/ads", r.HeadersMiddleware(), r.OptionsHandler)
+		api.OPTIONS("/lot/owner/construct", r.HeadersMiddleware(), r.OptionsHandler)
 
-		// api.OPTIONS("/rooms", r.HeadersMiddleware(), r.OptionsHandler)
-		// api.OPTIONS("/rooms/id/:roomid", r.HeadersMiddleware(), r.OptionsHandler)
-		// api.OPTIONS("/rooms/owner/ads", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.OptionsHandler)
-		// api.OPTIONS("/rooms/room/:roomid", r.HeadersMiddleware(), r.OptionsHandler)
-		// api.OPTIONS("/rooms/living_place/:lpid", r.HeadersMiddleware(), r.OptionsHandler)
+		api.OPTIONS("/rooms", r.HeadersMiddleware(), r.OptionsHandler)
+		api.OPTIONS("/rooms/id/:roomid", r.HeadersMiddleware(), r.OptionsHandler)
+		api.OPTIONS("/rooms/owner/ads", r.HeadersMiddleware(), r.OptionsHandler)
+		api.OPTIONS("/rooms/room/:roomid", r.HeadersMiddleware(), r.OptionsHandler)
+		api.OPTIONS("/rooms/living_place/:lpid", r.HeadersMiddleware(), r.OptionsHandler)
 
 	}
 

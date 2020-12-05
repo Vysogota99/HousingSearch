@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
@@ -87,7 +86,7 @@ func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, filters
 					%s
 					LIMIT $1 OFFSET $1 * ($2 - 1)`
 	queryFlats = fmt.Sprintf(queryFlats, condition)
-	log.Println(queryFlats)
+	// log.Println(queryFlats)
 
 	rows, err := tx.QueryContext(ctx, queryFlats, limit, offset)
 	if err != nil {
@@ -204,7 +203,7 @@ func (l *LotRepository) GetFlatAd(ctx context.Context, id int, isConstructor boo
 	}
 	queryLivingPlaces += ")"
 
-	log.Println(queryLivingPlaces)
+	// log.Println(queryLivingPlaces)
 	rowsLivingPlaces, err := tx.QueryContext(ctx, queryLivingPlaces, roomsID...)
 	defer rowsLivingPlaces.Close()
 	if err != nil {

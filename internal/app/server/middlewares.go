@@ -38,11 +38,14 @@ func (r *Router) TokenAuthMiddleware() gin.HandlerFunc {
 // HeadersMiddleware - устанавливает заголовки
 func (r *Router) HeadersMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		origin := c.Request.Header.Get("Origin")
+
 		c.Writer.Header().Add("Content-Type", "application/json")
-		c.Writer.Header().Add("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Add("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Add("Access-Control-Allow-Origin", origin)
 		c.Writer.Header().Add("Access-Control-Allow-Methods", "*")
 		c.Writer.Header().Add("Access-Control-Request-Headers", "*")
-		c.Writer.Header().Add("Access-Control-Allow-Headers", "*")
+		c.Writer.Header().Add("Access-Control-Allow-Headers", "authorization")
 
 		c.Next()
 	}
