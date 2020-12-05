@@ -19,7 +19,7 @@ func TestCreateUser(t *testing.T) {
 	user.PassDateOfBirth = "03.09.1999"
 	user.Password = "qwert"
 	user.Role = 1
-	user.TelephoneNumber = "89037658681"
+	user.TelephoneNumber = "+79037658681"
 
 	err := store.User().CreateUser(user)
 	assert.NoError(t, err)

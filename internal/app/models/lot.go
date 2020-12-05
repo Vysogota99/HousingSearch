@@ -25,7 +25,10 @@ type Lot struct {
 	Stove                   int     `json:"stove,omitempty"`
 	VacuumCleaner           bool    `json:"vacuum_cleaner"`
 	Dryer                   bool    `json:"dryer"`
+	Conditioner             bool    `json:"conditioner"`
+	Sex                     string  `json:"sex,omitempty"`
 	Internet                bool    `json:"internet"`
+	WiFi                    bool    `json:"wifi"`
 	Animals                 bool    `json:"animals"`
 	Smoking                 bool    `json:"smoking"`
 	Heating                 int     `json:"heating,omitempty"`

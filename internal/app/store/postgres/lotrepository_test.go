@@ -24,12 +24,19 @@ func TestCreateLot(t *testing.T) {
 	lot1.Rooms[0].Area = 15
 	lot1.Rooms[1].Area = 10
 	lot1.Area = 35
+	lot1.Sex = "male"
+	lot1.Conditioner = true
+	lot1.WiFi = true
 	lot1.IsConstructor = false
 
 	lot2.Address = "Россия, Москва, Коломенский проезд, 23к1, кв15"
 	lot2.Rooms[0].LivingPlaces[0].Price = 30000
 	lot2.Rooms[0].LivingPlaces[1].Price = 20000
 	lot2.Area = 120
+	lot1.Sex = "none"
+	lot1.Conditioner = true
+	lot1.WiFi = true
+
 	err := store.Lot().Create(context.Background(), &lot1)
 	assert.NoError(t, err)
 

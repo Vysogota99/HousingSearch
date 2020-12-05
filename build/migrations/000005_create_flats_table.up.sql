@@ -31,6 +31,9 @@ CREATE TABLE IF NOT EXISTS flats (
     heating int NOT NULL,
     is_visible boolean DEFAULT TRUE,
     is_constructor boolean DEFAULT TRUE,
+    conditioner boolean NOT NULL,
+    sex VARCHAR(64) NOT NULL,
+    wifi boolean NOT NULL,
     created_at TIMESTAMP DEFAULT current_timestamp,
     updated_at TIMESTAMP DEFAULT current_timestamp
 );

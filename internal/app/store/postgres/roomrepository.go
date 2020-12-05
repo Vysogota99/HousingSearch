@@ -72,9 +72,9 @@ func (r *RoomRepository) GetRooms(ctx context.Context, limit, offset int, filter
 	}
 
 	if condition == "" {
-		condition = fmt.Sprintf("WHERE f.is_visible = true AND f.is_constructor = %t", isConstruct)
+		condition = fmt.Sprintf("WHERE f.is_visible = true AND r.is_visible = true AND f.is_constructor = %t", isConstruct)
 	} else {
-		condition += fmt.Sprintf("f.is_visible = true AND f.is_constructor = %t", isConstruct)
+		condition += fmt.Sprintf("f.is_visible = true AND r.is_visible = true AND f.is_constructor = %t", isConstruct)
 	}
 
 	// roomFieldsStr := strings.Join(roomFields, ",")

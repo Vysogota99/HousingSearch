@@ -19,6 +19,7 @@ type Room struct {
 	AvgPrice              float64       `json:"avg_price,omitempty"`
 	Price                 float64       `json:"room_price,omitempty"`
 	Deposit               float64       `json:"room_deposit,omitempty"`
+	IsVisible             bool          `json:"is_visible"`
 }
 
 // RoomWorker ...
@@ -56,6 +57,7 @@ type RoomExtended struct {
 	Lat                    float64       `json:"lat,omitempty"`
 	Price                  float64       `json:"room_price,omitempty"`
 	Deposit                float64       `json:"room_deposit,omitempty"`
+	IsVisible              bool          `json:"is_visible"`
 }
 
 // MapRoom - ...

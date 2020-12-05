@@ -12,5 +12,6 @@ CREATE TABLE IF NOT EXISTS rooms (
     tv boolean NOT NULL,
     furniture boolean NOT NULL,
     area INT NOT NULL,
-    windows boolean NOT NULL
+    windows boolean NOT NULL,
+    is_visible boolean DEFAULT TRUE
 );
