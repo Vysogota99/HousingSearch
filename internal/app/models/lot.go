@@ -8,7 +8,7 @@ type Lot struct {
 	Address                 string  `json:"address,omitempty"`
 	Coordinates             Point   `json:"coordinates,omitempty"`
 	Description             string  `json:"description,omitempty"`
-	TimeToMetroONFoot       int     `json:"ttmetro_food,omitempty"`
+	TimeToMetroONFoot       int     `json:"ttmetro_foot,omitempty"`
 	TimeToMetroByTransport  int     `json:"ttmetro_transport,omitempty"`
 	MetroStation            string  `json:"metro,omitempty"`
 	Floor                   int     `json:"floor,omitempty"`
@@ -51,7 +51,7 @@ type FlatConstructor struct {
 	Rooms                  []Room `binding:"required" json:"rooms"`
 	Address                string `binding:"required" json:"address"`
 	Coordinates            Point  `binding:"required" json:"coordinates"`
-	TimeToMetroONFoot      int    `binding:"required" json:"ttmetro_food"`
+	TimeToMetroONFoot      int    `binding:"required" json:"ttmetro_foot"`
 	TimeToMetroByTransport int    `binding:"required" json:"ttmetro_transport"`
 	MetroStation           string `binding:"required" json:"metro"`
 	Floor                  int    `binding:"required" json:"floor"`
