@@ -65,11 +65,11 @@ func TestGetLP(t *testing.T) {
 func TestUpdateRoom(t *testing.T) {
 	var store store.Store = New(connString, STORAGE_LEVEL)
 	var id = 1
-	// fields := map[string]interface{}{
-	// 	"area": 30,
-	// 	"tv":   true,
-	// }
-	err := store.Room().UpdateRoom(context.Background(), id, nil)
+	fields := map[string]interface{}{
+		"description": "",
+		"area":        5,
+	}
+	err := store.Room().UpdateRoom(context.Background(), id, fields)
 
 	assert.NoError(t, err)
 }

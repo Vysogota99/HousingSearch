@@ -43,16 +43,20 @@ func (r *Router) Setup() *gin.Engine {
 
 		api.POST("/lot", r.HeadersMiddleware(), r.PostLotHandler)
 		api.GET("/lot", r.HeadersMiddleware(), r.GetLotsHandler)
-		api.GET("/lot/id/:lotid/:isconstructot", r.HeadersMiddleware(), r.GetLotHandler)
+
+		api.PATCH("/lot/update/:lotid", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.UpdateLotHandler)
+		api.PATCH("/lot/ad", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.CreteAdHandler)
+		api.GET("/lot/id/:lotid/:isconstructot", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.GetLotHandler)
 		api.GET("/lot/owner/ads", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.GetLotsOwnerHandler)
 		api.GET("/lot/owner/construct", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.GetConstructOwnerHandler)
+		api.DELETE("/lot", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.DeleteLotHandler)
 
 		api.GET("/rooms", r.HeadersMiddleware(), r.GetRoomsHandler)
 		api.GET("/rooms/id/:roomid", r.HeadersMiddleware(), r.GetRoomHandler)
 		api.GET("/rooms/owner/ads", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.GetRoomsOwnerHandler)
 		api.POST("/rooms", r.HeadersMiddleware(), r.PostRoomHandler)
 		api.DELETE("/rooms/room/:roomid", r.HeadersMiddleware(), r.DeleteRoomHandler)
-		api.PATCH("/rooms/room/:roomid", r.HeadersMiddleware(), r.UpdateRoomHandler)
+		api.PATCH("/rooms/room/:roomid", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.UpdateRoomHandler)
 		api.DELETE("/rooms/living_place/:lpid", r.HeadersMiddleware(), r.DeleteLivingPlaceHandler)
 		api.PATCH("/rooms/living_place/:lpid", r.HeadersMiddleware(), r.UpdateLivingPlaceHandler)
 
@@ -61,9 +65,11 @@ func (r *Router) Setup() *gin.Engine {
 		api.OPTIONS("/login", r.HeadersMiddleware(), r.LogInHandler)
 
 		api.OPTIONS("/lot", r.HeadersMiddleware(), r.OptionsHandler)
+		api.OPTIONS("/lot/ad", r.HeadersMiddleware(), r.OptionsHandler)
 		api.OPTIONS("/lot/id/:lotid/:isconstructot", r.HeadersMiddleware(), r.OptionsHandler)
 		api.OPTIONS("/lot/owner/ads", r.HeadersMiddleware(), r.OptionsHandler)
 		api.OPTIONS("/lot/owner/construct", r.HeadersMiddleware(), r.OptionsHandler)
+		api.OPTIONS("/lot/update/:lotid", r.HeadersMiddleware(), r.OptionsHandler)
 
 		api.OPTIONS("/rooms", r.HeadersMiddleware(), r.OptionsHandler)
 		api.OPTIONS("/rooms/id/:roomid", r.HeadersMiddleware(), r.OptionsHandler)

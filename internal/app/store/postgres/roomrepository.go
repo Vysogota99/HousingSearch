@@ -293,11 +293,17 @@ func (r *RoomRepository) UpdateRoom(ctx context.Context, id int, fields map[stri
 		case float64:
 			value = fmt.Sprintf("%f", value.(float64))
 		}
-		data += key + " = " + value.(string) + ", "
+
+		if value.(string) == "" {
+			value = "' '"
+		}
+
+		data += key + " = '" + value.(string) + "', "
 	}
 	data = data[0 : len(data)-2]
 	query = fmt.Sprintf(query, data)
 
+	log.Println(query)
 	_, err = tx.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
@@ -345,6 +351,7 @@ func (r *RoomRepository) UpdateLivingPlace(ctx context.Context, id int, fields m
 	data = data[0 : len(data)-2]
 	query = fmt.Sprintf(query, data)
 
+	log.Println(query)
 	_, err = tx.ExecContext(ctx, query, id)
 	if err != nil {
 		return err

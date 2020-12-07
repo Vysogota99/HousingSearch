@@ -41,7 +41,7 @@ type Lot struct {
 	AvgPriceDepositResident float64 `json:"avg_deposit_per_resident,omitempty"`
 	CreatedAt               string  `json:"created_at,omitempty"`
 	UpdatedAt               string  `json:"updated_at,omitempty"`
-	IsConstructor           bool
+	IsConstructor           bool    `json:"is_constructor"`
 }
 
 // FlatConstructor - конструктор квартиры
@@ -75,6 +75,7 @@ type FlatConstructor struct {
 	Heating                int    `binding:"required" json:"heating"`
 	CreatedAt              string `json:"created_at"`
 	UpdatedAt              string `json:"updated_at"`
+	IsConstructor          bool   `json:"is_constructor"`
 }
 
 // Point - ...
@@ -103,6 +104,18 @@ type Heating struct {
 	ID          int
 	Name        string
 	Description string
+}
+
+// ElementToUpate ...
+type ElementToUpate struct {
+	ID     int                    `json:"id" binding:"required"`
+	Fields map[string]interface{} `json:"fields" binding:"required"`
+}
+
+// RequestToUpdate ...
+type RequestToUpdate struct {
+	Lot   ElementToUpate   `json:"lot" binding:"required"`
+	Rooms []ElementToUpate `json:"rooms" binding:"required"`
 }
 
 // TestLot ...

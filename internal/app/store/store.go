@@ -15,9 +15,12 @@ type Store interface {
 // LotRepository - лот с жильем. При обращении к лоту, можно получить выборку
 // квартир, комнат, спальных мест с применением различных фильтров
 type LotRepository interface {
-	GetFlats(ctx context.Context, limit, offset int, filters map[string]string, isConstruct bool, orderBy []string, long, lat float64, radius int) (models.Paginations, error)
-	GetFlatAd(context.Context, int, bool) (*models.Lot, error)
+	GetFlats(ctx context.Context, limit, offset int, filters map[string]string, isConstruct bool, orderBy []string, long, lat float64, radius int, isOwner bool) (models.Paginations, error)
+	GetFlatAd(context.Context, int, bool, bool) (*models.Lot, error)
 	Create(context.Context, *models.Lot) error
+	UpdateFlat(ctx context.Context, id int, fields map[string]interface{}) error
+	CreateAd(ctx context.Context, req *models.RequestToUpdate) error
+	DeleteLot(ctx context.Context, id int) error
 }
 
 // RoomRepository - интерфейс для работы с структурой Room

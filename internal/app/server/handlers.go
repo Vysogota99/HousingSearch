@@ -244,7 +244,7 @@ func (r *Router) GetLotsHandler(c *gin.Context) {
 		return
 	}
 
-	res, err := r.store.Lot().GetFlats(context.Background(), limitInt, offsetInt, nil, false, orderBy, longFl64, latFl64, radiusInt)
+	res, err := r.store.Lot().GetFlats(context.Background(), limitInt, offsetInt, nil, false, orderBy, longFl64, latFl64, radiusInt, false)
 	if err != nil {
 		respond(c, http.StatusOK, nil, err.Error())
 		return
@@ -253,7 +253,7 @@ func (r *Router) GetLotsHandler(c *gin.Context) {
 	respond(c, http.StatusOK, res, "")
 }
 
-// GetLotHandler - получить полную информацию о конкретном лоте
+// GetLotHandler - получить полную информацию о конкретном лоте для владельца
 func (r *Router) GetLotHandler(c *gin.Context) {
 	lotID := c.Param("lotid")
 	lotIDInt, err := strconv.Atoi(lotID)
@@ -269,7 +269,7 @@ func (r *Router) GetLotHandler(c *gin.Context) {
 		return
 	}
 
-	res, err := r.store.Lot().GetFlatAd(context.Background(), lotIDInt, isConstructorBool)
+	res, err := r.store.Lot().GetFlatAd(context.Background(), lotIDInt, isConstructorBool, true)
 	switch {
 	case err == sql.ErrNoRows:
 		respond(c, http.StatusNotFound, res, LOT_NOT_FOUND)
@@ -280,6 +280,22 @@ func (r *Router) GetLotHandler(c *gin.Context) {
 	}
 
 	respond(c, http.StatusOK, res, "")
+}
+
+// DeleteLotHandler - удаляет лот
+func (r *Router) DeleteLotHandler(c *gin.Context) {
+	lotID := c.Query("lotid")
+	lotIDInt, err := strconv.Atoi(lotID)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+
+	if err := r.store.Lot().DeleteLot(context.Background(), lotIDInt); err != nil {
+		respond(c, http.StatusInternalServerError, nil, INTERNAL_SERVER_ERROR)
+		return
+	}
+	respond(c, http.StatusOK, nil, "")
 }
 
 // GetRoomsHandler - получить список комнат, чтобы потом разместить их на карте
@@ -435,7 +451,49 @@ func (r *Router) UpdateRoomHandler(c *gin.Context) {
 	}
 
 	if err := r.store.Room().UpdateRoom(context.Background(), roomIDInt, expRequest.Fields); err != nil {
-		respond(c, http.StatusInternalServerError, nil, INTERNAL_SERVER_ERROR)
+		respond(c, http.StatusInternalServerError, nil, err.Error())
+		return
+	}
+
+	respond(c, http.StatusOK, nil, "")
+}
+
+// UpdateLotHandler - обновляет данные о квартире
+func (r *Router) UpdateLotHandler(c *gin.Context) {
+	lotID := c.Param("lotid")
+	lotIDInt, err := strconv.Atoi(lotID)
+	if err != nil {
+		respond(c, http.StatusBadRequest, nil, err.Error())
+		return
+	}
+
+	type request struct {
+		Fields map[string]interface{} `json:"fields" binding:"required"`
+	}
+	expRequest := &request{}
+	if err := c.ShouldBindJSON(&expRequest); err != nil {
+		respond(c, http.StatusUnprocessableEntity, nil, err.Error())
+		return
+	}
+
+	if err := r.store.Lot().UpdateFlat(context.Background(), lotIDInt, expRequest.Fields); err != nil {
+		respond(c, http.StatusInternalServerError, nil, err.Error())
+		return
+	}
+
+	respond(c, http.StatusOK, nil, "")
+}
+
+// CreteAdHandler - создает объявление из шаблона
+func (r *Router) CreteAdHandler(c *gin.Context) {
+	expRequest := models.RequestToUpdate{}
+	if err := c.ShouldBindJSON(&expRequest); err != nil {
+		respond(c, http.StatusUnprocessableEntity, nil, err.Error())
+		return
+	}
+
+	if err := r.store.Lot().CreateAd(context.Background(), &expRequest); err != nil {
+		respond(c, http.StatusInternalServerError, nil, err.Error())
 		return
 	}
 
@@ -530,7 +588,7 @@ func (r *Router) GetLotsOwnerHandler(c *gin.Context) {
 
 	rooms, err := r.store.Lot().GetFlats(context.Background(), limitInt, offsetInt, map[string]string{
 		"owner_id": fmt.Sprintf("=%d", userID.(int64)),
-	}, false, nil, 0, 0, 0)
+	}, false, nil, 0, 0, 0, true)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -568,7 +626,7 @@ func (r *Router) GetConstructOwnerHandler(c *gin.Context) {
 
 	rooms, err := r.store.Lot().GetFlats(context.Background(), limitInt, offsetInt, map[string]string{
 		"owner_id": fmt.Sprintf("=%d", userID.(int64)),
-	}, true, nil, 0, 0, 0)
+	}, true, nil, 0, 0, 0, true)
 
 	switch {
 	case err == sql.ErrNoRows:

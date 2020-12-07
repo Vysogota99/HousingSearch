@@ -68,7 +68,49 @@ func TestGetLotsFiltered(t *testing.T) {
 
 func TestGetFlatAd(t *testing.T) {
 	var store store.Store = New(connString, STORAGE_LEVEL)
-	lot, err := store.Lot().GetFlatAd(context.Background(), 1, false)
+	lot, err := store.Lot().GetFlatAd(context.Background(), 1, false, false)
 	assert.NoError(t, err)
 	assert.NotNil(t, lot)
+}
+
+func TestUpdateFlat(t *testing.T) {
+	var store store.Store = New(connString, STORAGE_LEVEL)
+	var id = 4
+	fields := map[string]interface{}{
+		"is_constructor": true,
+	}
+	err := store.Lot().UpdateFlat(context.Background(), id, fields)
+
+	assert.NoError(t, err)
+}
+
+func TestCreateAd(t *testing.T) {
+	var store store.Store = New(connString, STORAGE_LEVEL)
+	fields := map[string]interface{}{
+		"is_constructor": true,
+	}
+
+	request := &models.RequestToUpdate{
+		Lot: models.ElementToUpate{
+			ID:     4,
+			Fields: fields,
+		},
+		Rooms: []models.ElementToUpate{
+			{
+				ID: 4,
+				Fields: map[string]interface{}{
+					"price": 12000,
+				},
+			},
+			{
+				ID: 3,
+				Fields: map[string]interface{}{
+					"price": 12000,
+				},
+			},
+		},
+	}
+	err := store.Lot().CreateAd(context.Background(), request)
+
+	assert.NoError(t, err)
 }

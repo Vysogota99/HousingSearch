@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -23,7 +24,7 @@ const (
 )
 
 // GetFlats - постранично выводит список квартир(объявлений)
-func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, filters map[string]string, isConstruct bool, orderBy []string, long, lat float64, radius int) (models.Paginations, error) {
+func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, filters map[string]string, isConstruct bool, orderBy []string, long, lat float64, radius int, isOwner bool) (models.Paginations, error) {
 	db, err := sql.Open("postgres", l.store.ConnString)
 	result := models.Paginations{}
 	result.CurrentPage = offset
@@ -63,10 +64,18 @@ func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, filters
 		}
 	}
 
-	if condition == "" {
-		condition = fmt.Sprintf("WHERE is_visible = true AND is_constructor = %t", isConstruct)
+	// видно ли объявление?
+	// только владелец видит скрытые объявления
+	var isVisible string
+	if isOwner {
+		isVisible = ""
 	} else {
-		condition += fmt.Sprintf("is_visible = true AND is_constructor = %t", isConstruct)
+		isVisible = "is_visible = true AND"
+	}
+	if condition == "" {
+		condition = fmt.Sprintf("WHERE %s is_constructor = %t", isVisible, isConstruct)
+	} else {
+		condition += fmt.Sprintf("%s is_constructor = %t", isVisible, isConstruct)
 	}
 	// Конец фильтров
 
@@ -140,7 +149,7 @@ func (l *LotRepository) GetFlats(ctx context.Context, limit, offset int, filters
 }
 
 // GetFlatAd - выводит конкретную квартиру(объявление)
-func (l *LotRepository) GetFlatAd(ctx context.Context, id int, isConstructor bool) (*models.Lot, error) {
+func (l *LotRepository) GetFlatAd(ctx context.Context, id int, isConstructor bool, isOwner bool) (*models.Lot, error) {
 	db, err := sql.Open("postgres", l.store.ConnString)
 	defer db.Close()
 	if err != nil {
@@ -160,14 +169,23 @@ func (l *LotRepository) GetFlatAd(ctx context.Context, id int, isConstructor boo
 	queryFlat := `SELECT id, owner_id, address, long, long, price, deposit, description, time_to_metro_on_foot,
 				  time_to_metro_by_transport, metro_station, floor, floor_total, area, repair, pass_elevator,
 				  service_elevator, kitchen, microwave_oven, bathroom, refrigerator, dishwasher, stove, vacuum_cleaner,
-				  dryer, internet, animals, smoking, heating, is_visible, is_constructor, conditioner, sex, wifi, created_at, updated_at
-				  FROM flats WHERE id = $1 AND is_visible = true AND is_constructor = %t`
+				  dryer, internet, animals, smoking, heating, is_visible, is_constructor, conditioner, sex, wifi, created_at, updated_at, is_constructor
+				  FROM flats WHERE id = $1 AND %s is_constructor = %t`
 
-	queryFlat = fmt.Sprintf(queryFlat, isConstructor)
+	// видно ли объявление?
+	// только владелец видит скрытые объявления
+	var isVisible string
+	if isOwner {
+		isVisible = ""
+	} else {
+		isVisible = "is_visible = true AND"
+	}
+
+	queryFlat = fmt.Sprintf(queryFlat, isVisible, isConstructor)
 	err = tx.QueryRowContext(ctx, queryFlat, id).Scan(&lot.ID, &lot.OwnerID, &lot.Address, &lot.Coordinates.X, &lot.Coordinates.Y, &lot.Price, &lot.Deposit, &lot.Description,
 		&lot.TimeToMetroONFoot, &lot.TimeToMetroByTransport, &lot.MetroStation, &lot.Floor, &lot.FloorsTotal,
 		&lot.Area, &lot.Repairs, &lot.PassElevator, &lot.ServiceElevator, &lot.Kitchen, &lot.MicrowaveOven, &lot.Bathroom, &lot.Refrigerator, &lot.Dishwasher, &lot.Stove,
-		&lot.VacuumCleaner, &lot.Dryer, &lot.Internet, &lot.Animals, &lot.Smoking, &lot.Heating, &lot.IsVisible, &lot.IsConstructor, &lot.Conditioner, &lot.Sex, &lot.WiFi, &lot.CreatedAt, &lot.UpdatedAt,
+		&lot.VacuumCleaner, &lot.Dryer, &lot.Internet, &lot.Animals, &lot.Smoking, &lot.Heating, &lot.IsVisible, &lot.IsConstructor, &lot.Conditioner, &lot.Sex, &lot.WiFi, &lot.CreatedAt, &lot.UpdatedAt, &lot.IsConstructor,
 	)
 	if err != nil {
 		return nil, err
@@ -296,6 +314,169 @@ func (l *LotRepository) Create(ctx context.Context, lot *models.Lot) error {
 				return err
 			}
 		}
+	}
+
+	tx.Commit()
+	return nil
+}
+
+// UpdateFlat - обновить данные квартиры
+func (l *LotRepository) UpdateFlat(ctx context.Context, id int, fields map[string]interface{}) error {
+	db, err := sql.Open("postgres", l.store.ConnString)
+	defer db.Close()
+	if err != nil {
+		return err
+	}
+
+	tx, err := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	defer tx.Rollback()
+	if err != nil {
+		return err
+	}
+
+	if len(fields) == 0 {
+		return nil
+	}
+
+	query := "UPDATE flats SET %s WHERE id = $1"
+	data := ""
+	for key, value := range fields {
+		switch value.(type) {
+		case int:
+			value = strconv.Itoa(value.(int))
+		case string:
+			value = value.(string)
+		case bool:
+			value = strconv.FormatBool(value.(bool))
+		case float32:
+			value = fmt.Sprintf("%f", value.(float32))
+		case float64:
+			value = fmt.Sprintf("%f", value.(float64))
+		}
+
+		if value.(string) == "" {
+			value = "' '"
+		}
+
+		data += key + " = '" + value.(string) + "', "
+	}
+	data = data[0 : len(data)-2]
+	query = fmt.Sprintf(query, data)
+
+	log.Println(query)
+	_, err = tx.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	tx.Commit()
+	return nil
+}
+
+// CreateAd - переводит шаблон в состояние объявления
+func (l *LotRepository) CreateAd(ctx context.Context, req *models.RequestToUpdate) error {
+	db, err := sql.Open("postgres", l.store.ConnString)
+	defer db.Close()
+	if err != nil {
+		return err
+	}
+
+	tx, err := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	defer tx.Rollback()
+	if err != nil {
+		return err
+	}
+
+	if len(req.Lot.Fields) == 0 {
+		return nil
+	}
+
+	req.Lot.Fields["is_constructor"] = false
+	query := "UPDATE flats SET %s WHERE id = $1"
+	data := ""
+	for key, value := range req.Lot.Fields {
+		switch value.(type) {
+		case int:
+			value = strconv.Itoa(value.(int))
+		case string:
+			value = value.(string)
+		case bool:
+			value = strconv.FormatBool(value.(bool))
+		case float32:
+			value = fmt.Sprintf("%f", value.(float32))
+		case float64:
+			value = fmt.Sprintf("%f", value.(float64))
+		}
+
+		if value.(string) == "" {
+			value = "' '"
+		}
+
+		data += key + " = '" + value.(string) + "', "
+	}
+	data = data[0 : len(data)-2]
+	query = fmt.Sprintf(query, data)
+
+	log.Println(query)
+	_, err = tx.ExecContext(ctx, query, req.Lot.ID)
+	if err != nil {
+		return err
+	}
+
+	for _, room := range req.Rooms {
+		query := "UPDATE rooms SET %s WHERE id = $1"
+		data := ""
+		for key, value := range room.Fields {
+			switch value.(type) {
+			case int:
+				value = strconv.Itoa(value.(int))
+			case string:
+				value = value.(string)
+			case bool:
+				value = strconv.FormatBool(value.(bool))
+			case float32:
+				value = fmt.Sprintf("%f", value.(float32))
+			case float64:
+				value = fmt.Sprintf("%f", value.(float64))
+			}
+
+			if value.(string) == "" {
+				value = "' '"
+			}
+
+			data += key + " = '" + value.(string) + "', "
+		}
+		data = data[0 : len(data)-2]
+		query = fmt.Sprintf(query, data)
+
+		log.Println(query)
+		_, err = tx.ExecContext(ctx, query, room.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	tx.Commit()
+	return nil
+}
+
+// DeleteLot ...
+func (l *LotRepository) DeleteLot(ctx context.Context, id int) error {
+	db, err := sql.Open("postgres", l.store.ConnString)
+	defer db.Close()
+	if err != nil {
+		return err
+	}
+
+	tx, err := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	defer tx.Rollback()
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, "DELETE FROM flats WHERE id = $1", id)
+	if err != nil {
+		return err
 	}
 
 	tx.Commit()
