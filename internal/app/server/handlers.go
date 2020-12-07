@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"context"
 
@@ -42,25 +43,34 @@ func (r *Router) TestAPIHandler(c *gin.Context) {
 // SignUPHandler - регистрация пользователя
 func (r *Router) SignUPHandler(c *gin.Context) {
 	type User struct {
-		Name            string `json:"name" binding:"required"`
-		LastName        string `json:"lastname" binding:"required"`
-		Sex             string `json:"sex" binding:"required"`
-		DateOfBirth     string `json:"dateOfBirth" binding:"required"`
-		Password        string `json:"password" binding:"required"`
-		TelephoneNumber string `json:"telephoneNumber" binding:"required"`
-		Role            string `json:"role" binding:"required"`
+		Name            string
+		LastName        string
+		Sex             string
+		DateOfBirth     string
+		Password        string
+		TelephoneNumber string
+		Role            string
+		Avatar          string
 	}
 
-	user := &User{}
-	if err := c.ShouldBindJSON(user); err != nil {
-		c.JSON(
-			http.StatusUnprocessableEntity,
-			gin.H{
-				"message": errors.New("Неправильное тело запроса").Error(),
-				"error":   err.Error(),
-			},
-		)
-		return
+	user := &User{
+		Name:            c.PostForm("name"),
+		LastName:        c.PostForm("lastname"),
+		Sex:             c.PostForm("sex"),
+		DateOfBirth:     c.PostForm("dateOfbirth"),
+		Password:        c.PostForm("password"),
+		TelephoneNumber: c.PostForm("telephoneNumber"),
+		Role:            c.PostForm("role"),
+	}
+
+	file, _ := c.FormFile("avatar")
+	newFilenName := fmt.Sprintf("%d_%s", int(time.Now().Unix()), file.Filename)
+	pathTpSave := fmt.Sprintf("../../assets/users/%s", newFilenName)
+	pathToDB := fmt.Sprintf("/images/users/%s", newFilenName)
+
+	if err := c.SaveUploadedFile(file, pathTpSave); err != nil {
+		log.Println(err)
+		respond(c, http.StatusInternalServerError, nil, err.Error())
 	}
 
 	userRequest := &authService.User{}
@@ -70,6 +80,7 @@ func (r *Router) SignUPHandler(c *gin.Context) {
 	userRequest.PassDateOfBirth = user.DateOfBirth
 	userRequest.Password = user.Password
 	userRequest.TelephoneNumber = user.TelephoneNumber
+	userRequest.AvatartPath = pathToDB
 	role, err := strconv.ParseInt(user.Role, 16, 32)
 	if err != nil {
 		c.JSON(

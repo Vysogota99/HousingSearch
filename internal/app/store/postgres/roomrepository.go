@@ -93,7 +93,7 @@ func (r *RoomRepository) GetRooms(ctx context.Context, limit, offset int, filter
 
 	query := `SELECT r.price, r.deposit, r.flat_id, r.area, r.id, r.max_residents, r.curr_number_of_residents, lp.avg_price, lp.avg_deposit,
 				f.address, f.floor, f.floor_total, f.metro_station, f.time_to_metro_by_transport, f.time_to_metro_on_foot, f.area,
-				f.long, f.lat
+				f.long, f.lat, r.description
 				FROM (
 					SELECT roomid, AVG(price) AS avg_price, AVG(deposit) AS avg_deposit
 					FROM living_places
@@ -116,7 +116,7 @@ func (r *RoomRepository) GetRooms(ctx context.Context, limit, offset int, filter
 	for rows.Next() {
 		room := models.RoomExtended{}
 		if err := rows.Scan(&room.Price, &room.Deposit, &room.FlatID, &room.Area, &room.ID, &room.MaxResidents, &room.CurrNumberOfResidents, &room.AvgPrice, &room.AvgDeposit,
-			&room.Address, &room.Floor, &room.FloorsTotal, &room.MetroStation, &room.TimeToMetroByTransport, &room.TimeToMetroByFoot, &room.FlatArea, &room.Long, &room.Lat,
+			&room.Address, &room.Floor, &room.FloorsTotal, &room.MetroStation, &room.TimeToMetroByTransport, &room.TimeToMetroByFoot, &room.FlatArea, &room.Long, &room.Lat, &room.Description,
 		); err != nil {
 			return result, err
 		}

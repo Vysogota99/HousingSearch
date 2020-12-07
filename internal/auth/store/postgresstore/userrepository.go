@@ -37,6 +37,7 @@ type User struct {
 	PassPlaceOfBirth   sql.NullString
 	PassRegistration   sql.NullString
 	Password           string
+	AvatarPath         string
 }
 
 // CreateUser - создает нового пользователя в базе данных
@@ -58,7 +59,7 @@ func (u *UserRepository) CreateUser(user *authService.User) error {
 		return err
 	}
 
-	row := tx.QueryRowContext(ctx, "INSERT INTO users(telephone_number, role, password) VALUES ($1, $2, $3) RETURNING id;", user.TelephoneNumber, user.Role, <-pass).Scan(&user.ID)
+	row := tx.QueryRowContext(ctx, "INSERT INTO users(telephone_number, role, password, avatar_path) VALUES ($1, $2, $3, $4) RETURNING id;", user.TelephoneNumber, user.Role, <-pass, user.AvatartPath).Scan(&user.ID)
 	if row != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
 			return fmt.Errorf("update drivers: unable to rollback: %w", rollbackErr)
@@ -97,7 +98,7 @@ func (u *UserRepository) GetUser(telephoneNumber string) (*authService.User, err
 
 	user := &User{}
 	row := db.QueryRow(`
-							SELECT u.id, u.email, u.vk_profile, u.telephone_number, u.role, u.password, p.passp_series, p.passp_number,
+							SELECT u.id, u.email, u.vk_profile, u.telephone_number, u.role, u.password, u.avatar_path, p.passp_series, p.passp_number,
 							p.passp_date_of_issue, p.passp_department_code, p.passp_issue_by, p.passp_name,
 							p.passp_lastname, p.passp_patronymic, p.passp_sex, p.passp_date_of_birth,
 							p.passp_place_of_birth, p.passp_registration
@@ -112,6 +113,7 @@ func (u *UserRepository) GetUser(telephoneNumber string) (*authService.User, err
 		&user.TelephoneNumber,
 		&user.Role,
 		&user.Password,
+		&user.AvatarPath,
 		&user.PassSeries,
 		&user.PassNumber,
 		&user.PassDateOfIssue,
@@ -147,6 +149,7 @@ func userCopy(from *User, to *authService.User) {
 	to.PassSex = from.PassSex
 	to.PassDateOfBirth = from.PassDateOfBirth
 	to.Password = from.Password
+	to.AvatartPath = from.AvatarPath
 
 	if from.TelegramProfile.Valid {
 		to.TelegramProfile = from.TelegramProfile.String

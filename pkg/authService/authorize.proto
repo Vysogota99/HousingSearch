@@ -63,4 +63,5 @@ message User {
 	string PassPlaceOfBirth = 17;
 	string PassRegistration = 18;
 	string Password = 19;
+	string AvatartPath = 20;
 }
