@@ -207,7 +207,7 @@ func (r *Router) PostLotHandler(c *gin.Context) {
 		respond(c, http.StatusUnauthorized, nil, UNAUTH)
 		return
 	}
-	lot.OwnerID = userID.(int)
+	lot.OwnerID = int(userID.(int64))
 	if err := r.store.Lot().Create(context.Background(), lot); err != nil {
 		respond(c, http.StatusOK, ALREADY_EXISTS, err.Error())
 		return
