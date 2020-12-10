@@ -41,9 +41,8 @@ func (r *Router) Setup() *gin.Engine {
 		api.POST("/logout", r.HeadersMiddleware(), r.LogoutHandler)
 		api.POST("/login", r.HeadersMiddleware(), r.LogInHandler)
 
-		api.POST("/lot", r.HeadersMiddleware(), r.PostLotHandler)
+		api.POST("/lot", r.HeadersMiddleware(), r.TokenAuthMiddleware(), r.PostLotHandler)
 		api.GET("/lot", r.HeadersMiddleware(), r.GetLotsHandler)
-
 		api.PATCH("/lot/update/:lotid", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.UpdateLotHandler)
 		api.PATCH("/lot/ad", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.CreteAdHandler)
 		api.GET("/lot/id/:lotid/:isconstructot", r.TokenAuthMiddleware(), r.HeadersMiddleware(), r.GetLotHandler)
